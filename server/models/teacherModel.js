@@ -30,7 +30,7 @@ const teacherSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      default: "teacher",
+      default: "Teacher",
     },
     school: {
       type: String,
@@ -63,7 +63,7 @@ const teacherSchema = new mongoose.Schema(
         },
       },
     ],
-    avatar: {
+    Tavatar: {
       public_id: {
         type: String,
         required: true,

@@ -42,7 +42,7 @@ const studentSchema = new mongoose.Schema(
       type: String,
       default: "student",
     },
-    avatar:{
+    Savatar:{
         public_id:{
             type:String,
             required:true,
