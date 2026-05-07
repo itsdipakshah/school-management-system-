@@ -14,7 +14,7 @@ export const generateForgetPasswordEmailTemplate = (resetPasswordUrl) => {
              Reset Password
           </a>
         </div>
-        <p>If the button doesn't work, copy and paste this link into your browser:</p>
+        <p style="font-size: 14px; color: #555;">If the button doesn't work, copy and paste this link into your browser:</p>
         <p style="word-break: break-all; color: #888; font-size: 12px;">${resetPasswordUrl}</p>
         <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
         <p style="font-size: 12px; color: #777;">If you did not request this, please ignore this email. This link is valid for a limited time.</p>

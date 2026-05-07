@@ -10,6 +10,7 @@ import Dashboard from "./pages/AdminDashboard/Dashboard";
 import Tdashboard from "./pages/teacherDashboard/Tdashboard";
 import Sdashboard from "./pages/studentDashboard/Sdashboard";
 import useAuth from "./hooks/UseAuth";
+import Logout from "./pages/auth/Logout";
 
 const ProtectedRoutes = () => {
   const { user, token, logout } = useAuth();
@@ -54,6 +55,7 @@ const App = () => {
         
         {/* User auth */}
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/logout" element={<Logout/>} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/forgot-password" element={<ForgotPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
