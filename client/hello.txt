@@ -1,0 +1,4 @@
+<CustomButton variant="primary" size="md">Login</CustomButton>
+<CustomButton variant="danger" loading={isSubmitting}>Delete</CustomButton>
+<CustomButton variant="outline" fullWidth>Register</CustomButton>
+<CustomButton variant="ghost" icon={LogOut}>Sign Out</CustomButton>
