@@ -5,7 +5,7 @@ import CustomButton from "@/components/common/CustomButton.jsx";
 
 const HomePage = () => {
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
+    <div className="min-h-screen bg-[#AAC4F5] text-slate-900">
       <div className="mx-auto flex min-h-screen max-w-6xl flex-col justify-center px-4 py-16 sm:px-6 lg:px-8">
 
         <div className="grid gap-12 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">

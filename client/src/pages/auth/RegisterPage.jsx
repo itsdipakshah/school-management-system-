@@ -4,7 +4,7 @@ import { Button } from "../../components/ui/button.jsx";
 
 const RegisterPage = () => {
   return (
-    <div className="min-h-screen bg-slate-50 px-4 py-16 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#AAC4F5] px-4 py-16 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-xl rounded-[2rem] border border-slate-200 bg-white p-10 shadow-xl shadow-slate-200/40">
         <div className="space-y-6 text-center">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-700">

@@ -81,7 +81,7 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="bg-[url(https://plus.unsplash.com/premium_photo-1702217998652-b9b795f52d5f?q=80&w=1332&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D)]  bg-cover bg-center bg-no-repeat min-h-screen flex items-center justify-center bg-slate-50 px-4 py-16">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 px-4 py-16">
       <form onSubmit={form.handleSubmit(onSubmit)} className="w-full max-w-md">
         <Card>
           <CardHeader>
@@ -156,14 +156,14 @@ const LoginPage = () => {
           <CardFooter className={"block"}>
             <button
               type="submit"
-              className="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition"
+              className="w-full bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-600 transition"
               disabled={form.formState.isSubmitting}
             >
               {form.formState.isSubmitting ? "Logging in..." : "Login"}
             </button>
-            <div className=" text-center mt-3">
+            <div className=" text-center mt-3 ">
               Forgot Your Password ?
-              <Link to="/forgot-password" className="text-blue-500 underline">Forget Password</Link>
+              <Link to="/forgot-password" className="text-blue-500 underline ml-4">Forget Password</Link>
             </div>
           </CardFooter>
         </Card>

@@ -101,7 +101,7 @@ const ResetPasswordPage = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4 py-16">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 px-4 py-16">
       <form onSubmit={form.handleSubmit(onSubmit)} className="w-full max-w-md">
         <Card>
           <CardHeader>

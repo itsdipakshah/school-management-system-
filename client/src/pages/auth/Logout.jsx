@@ -15,7 +15,7 @@ const Logout = () => {
     toast.success("User logout successfully")
   }
   return (
-    <div  onClick={handleLogout} className='flex justify-center py-70'>
+    <div  onClick={handleLogout} className='flex justify-center py-70 '>
 
     <Button>
     <Link to="/login">Logout</Link>

@@ -42,9 +42,8 @@ const ProtectedRoutes = () => {
   }
 
   const role = user?.role || decodedToken?.role;
- 
 
-
+  return <Outlet />;
 };
 
 const App = () => {
