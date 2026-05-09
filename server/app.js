@@ -5,6 +5,9 @@ import dbConnection from './database/dbConnection.js';
 import cookieParser from 'cookie-parser';
 import { errorMiddleware } from './middlewares/error.js';
 import userRoutes from './routers/userRoutes.js';
+import adminRoutes from './routers/adminRoutes.js';
+import fileUpload from 'express-fileupload';
+
 
 
 const app = express();
@@ -20,9 +23,15 @@ app.use(cors({
     credentials:true
 }));
 
+app.use(fileUpload({
+    useTempFiles: true,
+    tempFileDir: '/tmp/'
+ })
+);
 
 //Routes
 app.use("/api/v1/users",userRoutes);
+app.use("/api/v1/admin", adminRoutes);
 
 
 //database connection

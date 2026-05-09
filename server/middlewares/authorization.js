@@ -18,3 +18,10 @@ export const isAuthenticated = asyncHandler(async(req,res,next)=>{
 
     next();
 });
+
+export const isAdmin = asyncHandler(async (req, res, next) => {
+    if (req.user.role !== 'Admin') {
+        return next(new ErrorHandler("Access denied. Admins only.", 403));
+    }
+    next();
+});

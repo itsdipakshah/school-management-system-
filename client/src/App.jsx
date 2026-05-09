@@ -6,11 +6,12 @@ import RegisterPage from "./pages/auth/RegisterPage";
 import ForgotPage from "./pages/auth/ForgotPage";
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
 import HomePage from "./pages/HomePage";
-import Dashboard from "./pages/AdminDashboard/Dashboard";
-import Tdashboard from "./pages/teacherDashboard/Tdashboard";
-import Sdashboard from "./pages/studentDashboard/Sdashboard";
+
 import useAuth from "./hooks/UseAuth";
 import Logout from "./pages/auth/Logout";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import TeacherDashboard from "./pages/teacher/TeacherDashboard";
+import StudentDashboard from "./pages/student/StudentDashboard";
 
 const ProtectedRoutes = () => {
   const { user, token, logout } = useAuth();
@@ -60,9 +61,9 @@ const App = () => {
         <Route path="/reset-password" element={<ResetPasswordPage />} />
 
         <Route element={<ProtectedRoutes />}>
-          <Route path="/admin/dashboard" element={<Dashboard />} />
-          <Route path="/teacher/dashboard" element={<Tdashboard />} />
-          <Route path="/student/dashboard" element={<Sdashboard />} />
+          <Route path="/admin/dashboard" element={<AdminDashboard/>} />
+          <Route path="/teacher/dashboard" element={<TeacherDashboard/>} />
+          <Route path="/student/dashboard" element={<StudentDashboard/>} />
         </Route>
       </Routes>
     </BrowserRouter>
