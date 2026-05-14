@@ -25,3 +25,11 @@ export const isAdmin = asyncHandler(async (req, res, next) => {
     }
     next();
 });
+
+export const authorizeRoles = (...roles) =>
+    asyncHandler(async (req, res, next) => {
+        if (!roles.includes(req.user.role)) {
+            return next(new ErrorHandler("Access denied. Insufficient permissions.", 403));
+        }
+        next();
+    });

@@ -11,7 +11,10 @@ import {
     getAllResults,
     getAllFees,
     getAllAttendances,
-    getAllComplaints
+    getAllComplaints,
+    adminRegister,
+    getAdminById,
+    updateAdmin
 } from '../controllers/adminController.js';
 
 const router = express.Router();
@@ -36,5 +39,10 @@ router.get('/results', getAllResults);
 router.get('/fees', getAllFees);
 router.get('/attendances', getAllAttendances);
 router.get('/complaints', getAllComplaints);
+
+// Admin profile management
+router.post('/register', adminRegister);
+router.get('/:id', getAdminById);
+router.put('/:id', updateAdmin);
 
 export default router;

@@ -11,68 +11,190 @@ import Fee from '../models/feeModel.js';
 import Attendance from '../models/attendanceModel.js';
 import Complain from '../models/complainModel.js';
 import {asyncHandler} from '../middlewares/asyncHandler.js';
-import { generateToken } from '../utils/generateToken.js';
+import ErrorHandler from '../middlewares/error.js';
+import cloudinary from 'cloudinary';
 
-/*
+
 // Register Admin
-export const registerAdmin = asyncHandler(async (req, res, next) => {
-    const { firstName, lastName,email, password, phone, address, schoolName, avatar } = req.body;
+export const adminRegister = asyncHandler(async (req, res, next) => {
+    const { firstName, lastName, email, password, phone, schoolName, street, city, state, zip, avatar } = req.body;
 
-    if (!email || !password || !firstName || !lastName || !phone || !schoolName) {
-        return res.status(400).json({ message: 'Please fill all required fields' });
+    // Validate required fields
+    if (!firstName || !lastName || !email || !password || !phone || !schoolName) {
+        return next(new ErrorHandler("Please fill all required fields", 400));
     }
 
+    // Check if user already exists
     let user = await User.findOne({ email });
     if (user) {
-        return res.status(400).json({ message: 'User already exists' });
+        return next(new ErrorHandler("Email already registered", 400));
     }
 
-    // Create user with role Admin
-    user = new User({ firstName, lastName, email, password, role: 'Admin' });
+    // Check if admin with same email already exists
+    let adminExists = await Admin.findOne({ email });
+    if (adminExists) {
+        return next(new ErrorHandler("Admin with this email already exists", 400));
+    }
+
+    // Create User record with Admin role
+    user = new User({
+        name: `${firstName} ${lastName}`,
+        email,
+        password,
+        role: "Admin"
+    });
     await user.save();
 
-    // Create admin profile
-    const admin = new Admin({
+    // Upload avatar if present
+    const adminAvatarFile = req.files?.adminAvatar || req.files?.avatar;
+    let avatarData = {
+        public_id: "default",
+        url: "https://via.placeholder.com/150"
+    };
+
+    if (adminAvatarFile) {
+        const uploadResult = await cloudinary.v2.uploader.upload(adminAvatarFile.tempFilePath, {
+            folder: "AdminAvatars",
+            transformation: [{ width: 300, height: 300, crop: "fill" }],
+        });
+
+        if (!uploadResult?.secure_url) {
+            return next(new ErrorHandler("Avatar upload failed", 500));
+        }
+
+        avatarData = {
+            public_id: uploadResult.public_id,
+            url: uploadResult.secure_url,
+        };
+    }
+
+    // Create Admin profile
+    const adminProfile = new Admin({
         user: user._id,
         firstName,
         lastName,
-        phone,
         email,
-        password, // Note: password is stored in both, but auth uses user
-        address,
+        password,
+        phone,
         schoolName,
-        avatar
+        role: "Admin",
+        address: {
+            street: street || "",
+            city: city || "",
+            state: state || "",
+            zip: zip || ""
+        },
+        avatar: avatarData
     });
-    await admin.save();
+    await adminProfile.save();
 
-    generateToken(user, 201, 'Admin registered successfully', res);
+    // Populate user reference before returning
+    await adminProfile.populate('user', '-password');
+
+    return res.status(201).json({
+        success: true,
+        message: "Admin registered successfully",
+        admin: adminProfile
+    });
+});
+
+// Get Admin by ID
+export const getAdminById = asyncHandler(async (req, res, next) => {
+    const { id } = req.params;
+
+    const admin = await Admin.findById(id).populate('user', '-password -resetPasswordToken -resetPasswordExpire');
+    
+    if (!admin) {
+        return next(new ErrorHandler("Admin not found", 404));
+    }
+
+    res.status(200).json({
+        success: true,
+        admin
+    });
 });
 
 // Update Admin Profile
-export const updateAdminProfile = asyncHandler(async (req, res) => {
-    const adminId = req.user.id;
-    const { firstName, lastName, phone, address, schoolName, avatar } = req.body;
+export const updateAdmin = asyncHandler(async (req, res, next) => {
+    const { id } = req.params;
+    const { firstName, lastName, phone, street, city, state, zip, email } = req.body;
 
-    const admin = await Admin.findOne({ user: adminId });
+    // Check if admin exists
+    let admin = await Admin.findById(id);
     if (!admin) {
-        return res.status(404).json({ message: 'Admin not found' });
+        return next(new ErrorHandler("Admin not found", 404));
     }
 
-    // Update fields
+    // Authorization: Only the same admin 
+    if (req.user.role !== 'Admin') {
+        return next(new ErrorHandler("Access denied. Only admins can update admin profiles.", 403));
+    }
+
+    // Check if new email is already taken (if email is being changed)
+    if (email && email !== admin.email) {
+        const emailExists = await Admin.findOne({ email });
+        if (emailExists) {
+            return next(new ErrorHandler("Email already in use", 400));
+        }
+        // Also update in User collection
+        await User.findByIdAndUpdate(admin.user, { email }, { new: true });
+    }
+
+    // Keep the linked user name in sync
+    if ((firstName || lastName) && admin.user) {
+        const existingUser = await User.findById(admin.user).select('+password');
+        if (existingUser) {
+            existingUser.name = `${firstName || admin.firstName} ${lastName || admin.lastName}`;
+            await existingUser.save();
+        }
+    }
+
+    // Update admin fields
     if (firstName) admin.firstName = firstName;
     if (lastName) admin.lastName = lastName;
     if (phone) admin.phone = phone;
-    if (address) admin.address = address;
-    if (schoolName) admin.schoolName = schoolName;
-    if (avatar) admin.avatar = avatar;
+    if (email) admin.email = email;
+    if (street || city || state || zip) {
+        admin.address = {
+            street: street || admin.address.street,
+            city: city || admin.address.city,
+            state: state || admin.address.state,
+            zip: zip || admin.address.zip
+        };
+    }
+
+    const avatarFile = req.files?.adminAvatar || req.files?.avatar;
+    if (avatarFile) {
+        if (admin.avatar?.public_id && admin.avatar.public_id !== "default") {
+            await cloudinary.v2.uploader.destroy(admin.avatar.public_id);
+        }
+
+        const uploadResult = await cloudinary.v2.uploader.upload(avatarFile.tempFilePath, {
+            folder: "AdminAvatars",
+            transformation: [{ width: 300, height: 300, crop: "fill" }],
+        });
+
+        if (!uploadResult?.secure_url) {
+            return next(new ErrorHandler("Avatar upload failed", 500));
+        }
+
+        admin.avatar = {
+            public_id: uploadResult.public_id,
+            url: uploadResult.secure_url,
+        };
+    }
 
     await admin.save();
 
-    res.status(200).json({ message: 'Profile updated successfully', admin });
+    // Populate user reference before returning
+    await admin.populate('user', '-password -resetPasswordToken -resetPasswordExpire');
+
+    res.status(200).json({
+        success: true,
+        message: "Admin updated successfully",
+        admin
+    });
 });
-
-
-*/
 
 //Admin Dashboard Overview
 export const getAdminDashboard = asyncHandler(async (req, res) => {
@@ -110,7 +232,7 @@ export const getAdminDashboard = asyncHandler(async (req, res) => {
     const attendanceRecords = await Attendance.find({ date: { $gte: thirtyDaysAgo }, type: 'student' });
     const totalRecords = attendanceRecords.length;
     const presentCount = attendanceRecords.filter(record => record.status === 'Present').length;
-    const avgAttendance = totalRecords > 0 ? ((presentCount / totalRecords) * 100).toFixed(2) + '%' : '0%';
+    const avgAttendance = totalRecords > 0 ? (presentCount / totalRecords) * 100 : 0;
 
     res.status(200).json({
         totalStudents,
@@ -127,19 +249,19 @@ export const getAdminDashboard = asyncHandler(async (req, res) => {
         upcomingEvents,
         recentResults,
         totalPendingFees,
-        avgAttendance: avgAttendance.toFixed(2) + '%'
+        avgAttendance: `${avgAttendance.toFixed(2)}%`
     });
 });
 
 // Get all students (for admin to manage)
 export const getAllStudents = asyncHandler(async (req, res) => {
-    const students = await Student.find().select('name email rollNum sclassName');
+    const students = await Student.find().select('firstName lastName email rollNum sclassName schoolName');
     res.status(200).json(students);
 });
 
 // Get all teachers
 export const getAllTeachers = asyncHandler(async (req, res) => {
-    const teachers = await Teacher.find().select('name email teachSubject teachSclass');
+    const teachers = await Teacher.find().select('name email teachSubject teachSclass school');
     res.status(200).json(teachers);
 });
 
@@ -169,24 +291,25 @@ export const getAllEvents = asyncHandler(async (req, res) => {
 
 // Get all results
 export const getAllResults = asyncHandler(async (req, res) => {
-    const results = await Result.find().populate('student', 'name').populate('subject', 'subjectName').populate('exam', 'examName');
+    const results = await Result.find().populate('student', 'name email').populate('subject', 'subjectName');
     res.status(200).json(results);
 });
 
 // Get all fees
 export const getAllFees = asyncHandler(async (req, res) => {
-    const fees = await Fee.find().populate('student', 'name').sort({ dueDate: 1 });
+    const fees = await Fee.find().populate('student', 'name email').sort({ date: -1 });
     res.status(200).json(fees);
 });
 
 // Get all attendances
 export const getAllAttendances = asyncHandler(async (req, res) => {
-    const attendances = await Attendance.find().populate('sclass', 'sclassName').sort({ date: -1 });
+    const attendances = await Attendance.find().sort({ date: -1 });
     res.status(200).json(attendances);
 });
 
 // Get all complaints
 export const getAllComplaints = asyncHandler(async (req, res) => {
-    const complaints = await Complain.find().populate('student', 'name').sort({ createdAt: -1 });
+    const complaints = await Complain.find().populate('user', 'name email').sort({ createdAt: -1 });
     res.status(200).json(complaints);
 });
+

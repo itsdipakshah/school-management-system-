@@ -63,7 +63,7 @@ const teacherSchema = new mongoose.Schema(
         },
       },
     ],
-    Tavatar: {
+    teacherAvatar: {
       public_id: {
         type: String,
         required: true,

@@ -2,6 +2,11 @@ import mongoose from "mongoose";
 
 const studentSchema = new mongoose.Schema(
   {
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
    firstName: {
     type: String,
     required: true,
@@ -38,14 +43,14 @@ const studentSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
-    school: {
+    schoolName: {
       type: String,
       required: true,
-        trim: true,
+      trim: true,
     },
     role: {
       type: String,
-      default: "student",
+      default: "Student",
     },
     studentAvatar:{
         public_id:{
