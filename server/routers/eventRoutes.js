@@ -11,7 +11,7 @@ import {
 const router = express.Router();
 router.use(isAuthenticated);
 
-router.post("/", authorizeRoles("Admin"), createEvent);
+router.post("/create", authorizeRoles("Admin"), createEvent);
 router.get("/", getAllEvents);
 router.get("/:id", getEventById);
 router.put("/:id", authorizeRoles("Admin"), updateEvent);

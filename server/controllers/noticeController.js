@@ -9,7 +9,8 @@ export const createNotice = asyncHandler(async (req, res, next) => {
   if (!title || !description || !date) {
     return next(new ErrorHandler("Notice title, description and date are required", 400));
   }
-
+ 
+  //cloudinary upload for notice image  
   if (!req.files?.noticeImage) {
     return next(new ErrorHandler("Notice image is required", 400));
   }
@@ -26,7 +27,7 @@ export const createNotice = asyncHandler(async (req, res, next) => {
     title,
     description,
     date: new Date(date),
-    audience: audience || "all",
+    audience: "teacher" || "students",
     school: req.user._id,
     noticeImage: {
       public_id: uploadResult.public_id,

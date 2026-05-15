@@ -12,7 +12,7 @@ const router = express.Router();
 router.use(isAuthenticated);
 router.use(authorizeRoles("Admin"));
 
-router.post("/", createFee);
+router.post("/create", createFee);
 router.get("/", getAllFees);
 router.get("/:id", getFeeById);
 router.put("/:id", updateFee);

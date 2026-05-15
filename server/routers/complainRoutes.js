@@ -10,7 +10,7 @@ import {
 const router = express.Router();
 router.use(isAuthenticated);
 
-router.post("/", createComplaint);
+router.post("/create", createComplaint);
 router.get("/", authorizeRoles("Admin"), getAllComplaints);
 router.get("/:id", getComplaintById);
 router.put("/:id/status", authorizeRoles("Admin"), updateComplaintStatus);

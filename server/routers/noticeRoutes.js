@@ -11,7 +11,7 @@ import {
 const router = express.Router();
 router.use(isAuthenticated);
 
-router.post("/", authorizeRoles("Admin"), createNotice);
+router.post("/create", authorizeRoles("Admin"), createNotice);
 router.get("/", getAllNotices);
 router.get("/:id", getNoticeById);
 router.put("/:id", authorizeRoles("Admin"), updateNotice);
