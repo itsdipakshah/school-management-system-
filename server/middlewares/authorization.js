@@ -4,13 +4,17 @@ import ErrorHandler from "./error.js";
 import User from "../models/userModel.js";
 
 export const isAuthenticated = asyncHandler(async(req,res,next)=>{
-    const token = req.cookies?.token || req.body?.token;
+    const headerToken = req.headers?.authorization?.startsWith('Bearer ')
+      ? req.headers.authorization.split(' ')[1]
+      : null;
+
+    const token = req.cookies?.token || req.body?.token || headerToken;
     if(!token){
         return next(new ErrorHandler("Please login to access this resource",401));
     }
 
-    const decoded= jwt.verify(token ,process.env.JWT_SECRET);
-    req.user= await User.findById(decoded.id).select("-resetPasswordToken -resetPasswordExpire");
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = await User.findById(decoded.id).select("-resetPasswordToken -resetPasswordExpire");
    
     if (!req.user) {
         return next(new ErrorHandler("User not found", 404));
