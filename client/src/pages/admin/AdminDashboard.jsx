@@ -32,6 +32,7 @@ const AdminDashboard = () => {
   const [activeSection, setActiveSection] = useState("dashboard");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [globalSearch, setGlobalSearch] = useState("")
 
   const renderContent = () => {
     switch (activeSection) {
@@ -165,6 +166,12 @@ const AdminDashboard = () => {
                 <Input
                   placeholder="Search..."
                   className="w-[250px] pl-10 bg-secondary border-0"
+                  value={globalSearch}
+                  onChange={(e) => {
+                    const v = e.target.value
+                    setGlobalSearch(v)
+                    try { window.dispatchEvent(new CustomEvent('adminSearch', { detail: v })) } catch (err) {}
+                  }}
                 />
               </div>
 

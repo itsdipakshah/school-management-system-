@@ -3,8 +3,8 @@ import { asyncHandler } from "../middlewares/asyncHandler.js";
 import Sclass from "../models/sclassModel.js";
 
 export const createClass = asyncHandler(async (req, res, next) => {
-  const { sclassName, school } = req.body;
-  if (!sclassName) {
+  const { sclassName, section,roomNum,school } = req.body;
+  if (!sclassName || !section || !roomNum) {
     return next(new ErrorHandler("Class name is required", 400));
   }
 
@@ -41,8 +41,10 @@ export const updateClass = asyncHandler(async (req, res, next) => {
     return next(new ErrorHandler("Class not found", 404));
   }
 
-  const { sclassName, school } = req.body;
+  const { sclassName,section,roomNum, school } = req.body;
   if (sclassName) sclass.sclassName = sclassName;
+  if (section) sclass.section = section;
+  if (roomNum) sclass.roomNum = roomNum;
   if (school) sclass.school = school;
 
   await sclass.save();

@@ -255,7 +255,7 @@ export const getAdminDashboard = asyncHandler(async (req, res) => {
 
 // Get all students (for admin to manage)
 export const getAllStudents = asyncHandler(async (req, res) => {
-    const students = await Student.find().select('firstName lastName email rollNum sclassName schoolName');
+    const students = await Student.find().select('firstName lastName email rollNum sclassName schoolName user');
     res.status(200).json(students);
 });
 

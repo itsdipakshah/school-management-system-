@@ -55,6 +55,7 @@ const StudentsManagement = () => {
   const navigate = useNavigate()
   const { get, post, put, del } = useApi()
   const [students, setStudents] = useState([])
+  const [availableClasses, setAvailableClasses] = useState([])
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isEditMode, setIsEditMode] = useState(false)
   const [editingStudentId, setEditingStudentId] = useState(null)
@@ -85,9 +86,29 @@ const StudentsManagement = () => {
     }
   }, [get])
 
+  const fetchClasses = useCallback(async () => {
+    try {
+      const response = await get('/classes/all')
+      if (response?.classes && Array.isArray(response.classes)) {
+        setAvailableClasses(response.classes)
+      } else if (Array.isArray(response)) {
+        setAvailableClasses(response)
+      }
+    } catch (error) {
+      console.error('Error fetching classes:', error)
+    }
+  }, [get])
+
   useEffect(() => {
     fetchStudents()
-  }, [fetchStudents])
+    fetchClasses()
+  }, [fetchStudents, fetchClasses])
+
+  useEffect(() => {
+    const handler = (e) => setSearchTerm(e.detail ?? '')
+    window.addEventListener('adminSearch', handler)
+    return () => window.removeEventListener('adminSearch', handler)
+  }, [])
 
   const filteredStudents = useMemo(() => {
     const lowerSearch = (searchTerm || '').toLowerCase()
@@ -209,7 +230,7 @@ const StudentsManagement = () => {
   }
 
   const handleDelete = async (studentId) => {
-    if (!window.confirm('Delete this student?')) return
+   
     try {
       await del(`/students/${studentId}`)
       toast.success('Student deleted successfully')
@@ -268,7 +289,18 @@ const StudentsManagement = () => {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <Input value={formState.schoolName} onChange={(e) => handleInputChange('schoolName', e.target.value)} placeholder="School name" />
-              <Input value={formState.sclassName} onChange={(e) => handleInputChange('sclassName', e.target.value)} placeholder="Class" />
+              <Select value={formState.sclassName} onValueChange={(value) => handleInputChange('sclassName', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select class" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableClasses.map((cls) => (
+                    <SelectItem key={cls._id || cls.id} value={cls.sclassName}>
+                      {cls.sclassName} - {cls.section}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <Input value={formState.address} onChange={(e) => handleInputChange('address', e.target.value)} placeholder="Address" />
@@ -290,7 +322,7 @@ const StudentsManagement = () => {
         </DialogContent>
       </Dialog>
 
-      {/* View Dialog */}
+      {/* View Dialog ko lagi code*/}
       <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
         <DialogContent className="sm:max-w-150 bg-card border-border">
           <DialogHeader>

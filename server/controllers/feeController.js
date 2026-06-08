@@ -2,6 +2,7 @@ import ErrorHandler from "../middlewares/error.js";
 import { asyncHandler } from "../middlewares/asyncHandler.js";
 import Fee from "../models/feeModel.js";
 import User from "../models/userModel.js";
+import Student from "../models/studentModel.js";
 import Sclass from "../models/sclassModel.js";
 
 export const createFee = asyncHandler(async (req, res, next) => {
@@ -11,7 +12,16 @@ export const createFee = asyncHandler(async (req, res, next) => {
     return next(new ErrorHandler("Student, class, and amount are required to create a fee record", 400));
   }
 
-  const studentExists = await User.findById(student);
+  let studentUserId = student;
+  let studentExists = await User.findById(studentUserId);
+  if (!studentExists) {
+    const studentRecord = await Student.findById(student);
+    if (studentRecord?.user) {
+      studentUserId = studentRecord.user;
+      studentExists = await User.findById(studentUserId);
+    }
+  }
+
   const classExists = await Sclass.findById(sclass);
 
   if (!studentExists) {
@@ -22,7 +32,7 @@ export const createFee = asyncHandler(async (req, res, next) => {
   }
 
   const fee = await Fee.create({
-    student,
+    student: studentUserId,
     sclass,
     amount,
     feeType: feeType || "Tuition",

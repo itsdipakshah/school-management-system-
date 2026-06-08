@@ -86,7 +86,7 @@ export const registerStudent = asyncHandler(async (req, res, next) => {
 
 export const getAllStudents = asyncHandler(async (req, res) => {
   const students = await Student.find().select(
-    "firstName lastName email rollNum sclassName schoolName"
+    "firstName lastName email rollNum sclassName schoolName user"
   );
 
   res.status(200).json({
