@@ -11,17 +11,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { Edit, Eye, MoreHorizontal, Plus, RefreshCcw, Search, Trash2 } from 'lucide-react'
+import { Edit, Eye, Plus, RefreshCcw, Search, Trash2 } from 'lucide-react'
 import z from 'zod'
 
 const createSchema = z.object({
@@ -211,7 +204,7 @@ const TeachersManagement = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="pl-16 pr-4 py-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-foreground">Teachers</h2>

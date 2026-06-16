@@ -32,7 +32,7 @@ const AdminDashboard = () => {
   const [activeSection, setActiveSection] = useState("dashboard");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-  const [globalSearch, setGlobalSearch] = useState("")
+  const [globalSearch, setGlobalSearch] = useState("");
 
   const renderContent = () => {
     switch (activeSection) {
@@ -88,16 +88,14 @@ const AdminDashboard = () => {
     }
   };
 
-  
-    const navigate = useNavigate();
-    const { logout } = useAuth();
+  const navigate = useNavigate();
+  const { logout } = useAuth();
 
-    const handleLogout = () => {
-      logout();
-      navigate("/login");
-      toast.success("User logout successfully");
-    };
-
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+    toast.success("User logout successfully");
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -108,8 +106,6 @@ const AdminDashboard = () => {
           onClick={() => setIsMobileSidebarOpen(false)}
         />
       )}
-
-      {/* Sidebar - Hidden on mobile, shown when toggled */}
       <div
         className={cn(
           "fixed inset-y-0 left-0 z-40 transform lg:transform-none transition-transform duration-300",
@@ -146,6 +142,7 @@ const AdminDashboard = () => {
                 size="icon"
                 className="lg:hidden"
                 onClick={() => setIsMobileSidebarOpen(true)}
+                
               >
                 <Menu className="w-5 h-5" />
               </Button>
@@ -168,9 +165,13 @@ const AdminDashboard = () => {
                   className="w-[250px] pl-10 bg-secondary border-0"
                   value={globalSearch}
                   onChange={(e) => {
-                    const v = e.target.value
-                    setGlobalSearch(v)
-                    try { window.dispatchEvent(new CustomEvent('adminSearch', { detail: v })) } catch (err) {}
+                    const v = e.target.value;
+                    setGlobalSearch(v);
+                    try {
+                      window.dispatchEvent(
+                        new CustomEvent("adminSearch", { detail: v }),
+                      );
+                    } catch (err) {}
                   }}
                 />
               </div>
@@ -232,11 +233,8 @@ const AdminDashboard = () => {
                   <DropdownMenuItem>Support</DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem className="text-destructive" asChild>
-                    <div
-                      onClick={handleLogout}>
-                     
-                        <Link to="/login">Logout</Link>
-                      
+                    <div onClick={handleLogout}>
+                      <Link to="/login">Logout</Link>
                     </div>
                   </DropdownMenuItem>
                 </DropdownMenuContent>

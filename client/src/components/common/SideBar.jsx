@@ -20,7 +20,6 @@ import {
 import { Separator } from '../ui/separator'
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
 import { cn } from '@/lib/utils'
-
 const menuItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'students', label: 'Students', icon: Users },
@@ -116,7 +115,7 @@ const SideBar = ({ activeSection, onSectionChange, isCollapsed, onCollapsedChang
           {!isCollapsed && (
             <Button variant="ghost" size="icon" className="shrink-0 text-muted-foreground hover:text-sidebar-foreground">
               
-              <LogOut className="w-4 h-4" />
+              <LogOut className="w-4 h-4"  />
             </Button>
           )}
         </div>
