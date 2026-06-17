@@ -26,6 +26,11 @@ const eventSchema = new mongoose.Schema(
       type: String,
       required: true
     },
+    eventType: {
+      type: String,
+      enum: ["academic", "extracurricular", "other"],
+      default: "other"
+    },
     school: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
