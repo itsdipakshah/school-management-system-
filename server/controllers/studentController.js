@@ -3,6 +3,7 @@ import ErrorHandler from "../middlewares/error.js";
 import { asyncHandler } from "../middlewares/asyncHandler.js";
 import Student from "../models/studentModel.js";
 import User from "../models/userModel.js";
+import Sclass from "../models/sclassModel.js";
 
 export const registerStudent = asyncHandler(async (req, res, next) => {
   const {
@@ -88,7 +89,6 @@ export const getAllStudents = asyncHandler(async (req, res) => {
   const students = await Student.find().select(
     "firstName lastName email rollNum sclassName schoolName user"
   );
-
   res.status(200).json({
     success: true,
     students,
@@ -106,6 +106,18 @@ export const getStudentById = asyncHandler(async (req, res, next) => {
     student,
   });
 });
+
+export const getStudentsByClass = asyncHandler(async (req, res) => {
+  const studentByClass = await Student.find({ sclassName: req.params.sclassName }).select(
+    "firstName lastName email rollNum sclassName schoolName user"
+  );
+   res.status(200).json({
+    success: true,
+    studentByClass,
+  });
+
+});
+
 
 export const updateStudent = asyncHandler(async (req, res, next) => {
   const student = await Student.findById(req.params.id);

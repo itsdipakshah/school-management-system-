@@ -6,6 +6,7 @@ import {
   getStudentById,
   updateStudent,
   deleteStudent,
+  getStudentsByClass,
 } from "../controllers/studentController.js";
 
 const router = express.Router();
@@ -14,6 +15,7 @@ router.use(authorizeRoles("Admin"));
 
 router.post("/register", registerStudent);
 router.get("/", getAllStudents);
+router.get("/class/:sclassName", getStudentsByClass);
 router.get("/:id", getStudentById);
 router.put("/:id", updateStudent);
 router.delete("/:id", deleteStudent);

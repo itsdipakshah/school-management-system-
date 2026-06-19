@@ -26,6 +26,8 @@ export const getAllClasses = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, classes });
 });
 
+
+
 export const getClassById = asyncHandler(async (req, res, next) => {
   const sclass = await Sclass.findById(req.params.id);
   if (!sclass) {

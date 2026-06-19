@@ -172,11 +172,11 @@ const StudentsManagement = () => {
   const handleSubmit = async (event) => {
     event.preventDefault()
 
-    // For create require full validation, for edit allow partial (no password required)
     if (!isEditMode) {
       const validation = createSchema.safeParse(formState)
       if (!validation.success) {
-        toast.error(validation.error.errors[0].message)
+        const errorMessage = validation.error?.errors?.[0]?.message || "Validation failed"
+        toast.error(errorMessage)
         return
       }
       if (!formState.studentAvatar) {
@@ -209,7 +209,6 @@ const StudentsManagement = () => {
           headers: { 'Content-Type': 'multipart/form-data' },
         })
       }
-
       if (response?.success) {
         toast.success(isEditMode ? 'Student updated successfully' : 'Student registered successfully')
         setIsDialogOpen(false)
