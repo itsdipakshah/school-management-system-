@@ -13,7 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { Bell, Menu, Search } from "lucide-react";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import DashboardOverview from "./DashboardOverview";
 import StudentsManagement from "./StudentsManagement";
 import TeachersManagement from "./TeachersManagement";
@@ -33,6 +33,35 @@ const AdminDashboard = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [globalSearch, setGlobalSearch] = useState("");
+  const [displayName, setDisplayName] = useState("User");
+
+  const navigate = useNavigate();
+  const { logout, user } = useAuth();
+
+  useEffect(() => {
+    if (user?.name) {
+      setDisplayName(user.name);
+    } else {
+      const savedProfile = localStorage.getItem("user_profile");
+      if (savedProfile) {
+        try {
+          const parsed = JSON.parse(savedProfile);
+          if (parsed?.name) setDisplayName(parsed.name);
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+  }, [user]);
+
+  useEffect(() => {
+    setGlobalSearch("");
+    try {
+      window.dispatchEvent(new CustomEvent("adminSearch", { detail: "" }));
+    } catch (err) {
+      console.error(err);
+    }
+  }, [activeSection]);
 
   const renderContent = () => {
     switch (activeSection) {
@@ -88,18 +117,23 @@ const AdminDashboard = () => {
     }
   };
 
-  const navigate = useNavigate();
-  const { logout } = useAuth();
-
   const handleLogout = () => {
     logout();
     navigate("/login");
     toast.success("User logout successfully");
   };
 
+  const getInitials = (name) => {
+    return name
+      ?.split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2) || "AD";
+  };
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Mobile Sidebar Overlay */}
       {isMobileSidebarOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-30 lg:hidden"
@@ -125,24 +159,20 @@ const AdminDashboard = () => {
         />
       </div>
 
-      {/* Main Content */}
       <div
         className={cn(
           "transition-all duration-300",
           isSidebarCollapsed ? "lg:ml-[70px]" : "lg:ml-[260px]",
         )}
       >
-        {/* Header */}
         <header className="sticky top-0 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
           <div className="flex items-center justify-between h-16 px-4 sm:px-6">
             <div className="flex items-center gap-4">
-              {/* Mobile menu button */}
               <Button
                 variant="ghost"
                 size="icon"
                 className="lg:hidden"
                 onClick={() => setIsMobileSidebarOpen(true)}
-                
               >
                 <Menu className="w-5 h-5" />
               </Button>
@@ -151,18 +181,17 @@ const AdminDashboard = () => {
                   {getSectionTitle()}
                 </h1>
                 <p className="text-sm text-muted-foreground">
-                  Welcome back, Admin
+                  Welcome back, <span className="font-medium text-foreground">{displayName}</span>
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-3">
-              {/* Search */}
               <div className="hidden md:block relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search..."
-                  className="w-[250px] pl-10 bg-secondary border-0"
+                  placeholder="Search across collections..."
+                  className="w-[250px] pl-10 bg-secondary border-0 focus-visible:ring-1 focus-visible:ring-primary"
                   value={globalSearch}
                   onChange={(e) => {
                     const v = e.target.value;
@@ -171,12 +200,13 @@ const AdminDashboard = () => {
                       window.dispatchEvent(
                         new CustomEvent("adminSearch", { detail: v }),
                       );
-                    } catch (err) {}
+                    } catch (err) {
+                      console.error(err);
+                    }
                   }}
                 />
               </div>
 
-              {/* Notifications */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="relative">
@@ -210,32 +240,34 @@ const AdminDashboard = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* User Menu */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
-                    className="relative h-9 w-9 rounded-full"
+                    className="relative h-9 w-9 rounded-full border border-border"
                   >
                     <Avatar className="h-9 w-9">
-                      <AvatarImage src="/placeholder-avatar.jpg" />
-                      <AvatarFallback className="bg-primary text-primary-foreground">
-                        AD
+                      <AvatarImage src="/placeholder-avatar.jpg" alt={displayName} />
+                      <AvatarFallback className="bg-primary text-primary-foreground text-xs font-bold">
+                        {getInitials(displayName)}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem>Profile</DropdownMenuItem>
-                  <DropdownMenuItem>Settings</DropdownMenuItem>
-                  <DropdownMenuItem>Support</DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem className="text-destructive" asChild>
-                    <div onClick={handleLogout}>
-                      <Link to="/login">Logout</Link>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none text-foreground">{displayName}</p>
+                      <p className="text-xs leading-none text-muted-foreground">Logged in</p>
                     </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem className="cursor-pointer">Profile</DropdownMenuItem>
+                  <DropdownMenuItem className="cursor-pointer">Settings</DropdownMenuItem>
+                  <DropdownMenuItem className="cursor-pointer">Support</DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem className="text-destructive font-medium cursor-pointer focus:bg-destructive/10 focus:text-destructive" onClick={handleLogout}>
+                    Logout
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -243,7 +275,6 @@ const AdminDashboard = () => {
           </div>
         </header>
 
-        {/* Page Content */}
         <main className="p-4 sm:p-6 lg:p-8">{renderContent()}</main>
       </div>
     </div>

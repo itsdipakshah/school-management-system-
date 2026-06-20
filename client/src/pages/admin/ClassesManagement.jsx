@@ -40,7 +40,7 @@ import { toast } from "sonner"
 import { useNavigate } from "react-router-dom"
 import z from "zod"
 
-//first create schema
+// First create schema
 const createSchema = z.object({
   sclassName: z.string().min(1, 'Class name is required'),
   section: z.string().min(1, 'Section is required'),
@@ -58,7 +58,7 @@ const initialClasses = {
 }
 
 const ClassesManagement = () => {
-  const {post,put,del,get} = useApi();
+  const { post, put, del, get } = useApi();
   const [searchTerm, setSearchTerm] = useState("")
   const navigate = useNavigate();
   const [dependency, setDependency] = useState(0);
@@ -97,6 +97,7 @@ const ClassesManagement = () => {
     fetchData()
   }, [get, dependency])
 
+  // Listen for global search events from admin dashboard
   useEffect(() => {
     const handler = (e) => setSearchTerm(e.detail ?? '')
     window.addEventListener('adminSearch', handler)
@@ -111,6 +112,7 @@ const ClassesManagement = () => {
         section: newClass.section,
         roomNum: newClass.roomNum,
         school: newClass.school,
+        totalStudents: newClass.totalStudents
       }
       const response = await post('/classes/create', payload)
       if (response?.success) {
@@ -123,12 +125,13 @@ const ClassesManagement = () => {
       }
     } catch (error) {
       console.error(error)
-      toast.error(error?.message || 'An error occurred while creating the class')
+      toast.error(error?.errors?.[0]?.message || error?.message || 'An error occurred while creating the class')
     }
   }
 
   const handleDeleteClass = async(classId) => {
-    try{
+    if (!confirm("Are you sure you want to delete this class?")) return;
+    try {
       const response = await del(`/classes/${classId}`);
       if (response?.success) {
         toast.success("Class deleted successfully!");
@@ -136,7 +139,7 @@ const ClassesManagement = () => {
       } else {
         toast.error(response?.message || "Failed to delete class, try again");
       }
-    }catch(error){
+    } catch(error){
       console.error("Delete error:", error);
       toast.error("An error occurred while deleting the class. Please try again.");
     }
@@ -150,7 +153,7 @@ const ClassesManagement = () => {
       school: cls.school,
       totalStudents: cls.totalStudents || 0,
     })
-    setEditingId(cls._id)
+    setEditingId(cls._id || cls.id)
     setIsEditDialogOpen(true)
   }
 
@@ -162,6 +165,7 @@ const ClassesManagement = () => {
         section: editingClass.section,
         roomNum: editingClass.roomNum,
         school: editingClass.school,
+        totalStudents: editingClass.totalStudents
       }
       const response = await put(`/classes/${editingId}`, payload)
       if (response?.success) {
@@ -175,11 +179,11 @@ const ClassesManagement = () => {
       }
     } catch (error) {
       console.error(error)
-      toast.error(error?.message || 'An error occurred while updating the class')
+      toast.error(error?.errors?.[0]?.message || error?.message || 'An error occurred while updating the class')
     }
   }
 
-  const totalStudents = classes.reduce((total, cls) => {
+  const totalStudentsCount = classes.reduce((total, cls) => {
     const classStudentCount = students.filter((student) => student.sclassName === cls.sclassName).length
     return total + classStudentCount
   }, 0)
@@ -187,16 +191,20 @@ const ClassesManagement = () => {
   const getClassStudentCount = (className) => {
     return students.filter((student) => student.sclassName === className).length
   }
-  const filteredClasses = classes.filter((cls) =>
-    cls.sclassName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    cls.section.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    cls.roomNum.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
-  
+  const filteredClasses = classes.filter((cls) => {
+    const className = cls.sclassName || ""
+    const sectionName = cls.section || ""
+    const roomNumber = cls.roomNum || ""
+    return (
+      className.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      sectionName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      roomNumber.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  });
 
   return (
-     <div className="pl-16 pr-4 py-6">
+    <div className="pl-16 pr-4 py-6 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -278,7 +286,7 @@ const ClassesManagement = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="students">Total Students</Label>
+                  <Label htmlFor="students">Total Capacity</Label>
                   <Input
                     id="students"
                     type="number"
@@ -369,7 +377,7 @@ const ClassesManagement = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="edit-students">Total Students</Label>
+                  <Label htmlFor="edit-students">Total Capacity</Label>
                   <Input
                     id="edit-students"
                     type="number"
@@ -414,7 +422,7 @@ const ClassesManagement = () => {
                 <Users className="w-6 h-6 text-chart-2" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-foreground">{totalStudents}</p>
+                <p className="text-2xl font-bold text-foreground">{totalStudentsCount}</p>
                 <p className="text-sm text-muted-foreground">Total Students</p>
               </div>
             </div>
@@ -428,7 +436,7 @@ const ClassesManagement = () => {
               </div>
               <div>
                 <p className="text-2xl font-bold text-foreground">
-                  {classes.length ? Math.round(totalStudents / classes.length) : 0}
+                  {classes.length ? Math.round(totalStudentsCount / classes.length) : 0}
                 </p>
                 <p className="text-sm text-muted-foreground">Avg per Class</p>
               </div>
@@ -437,13 +445,13 @@ const ClassesManagement = () => {
         </Card>
       </div>
 
-      {/* Search */}
+      {/* Search Bar alternative input view mapping global stream */}
       <Card className="bg-card border-border">
         <CardContent className="p-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Search classes..."
+              placeholder="Filter classes page entries locally..."
               className="pl-10"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -478,7 +486,6 @@ const ClassesManagement = () => {
                   <TableCell>
                     <Badge variant="outline">{cls.section}</Badge>
                   </TableCell>
-                 
                   <TableCell className="text-foreground">Room {cls.roomNum}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
@@ -494,7 +501,7 @@ const ClassesManagement = () => {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                      <DropdownMenuItem
+                        <DropdownMenuItem
                           className="gap-2"
                           onClick={() => handleEditClass(cls)}
                         >
@@ -503,7 +510,7 @@ const ClassesManagement = () => {
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           className="gap-2 text-destructive"
-                          onClick={() =>handleDeleteClass(cls._id)}
+                          onClick={() => handleDeleteClass(cls._id || cls.id)}
                         >
                           <Trash2 className="w-4 h-4" />
                           Delete
@@ -515,7 +522,9 @@ const ClassesManagement = () => {
               ))}
               {filteredClasses.length === 0 && (
                 <TableRow className="border-border">
-                  <TableCell colSpan={6} className="py-10 text-center text-sm text-muted-foreground">No classes found.</TableCell>
+                  <TableCell colSpan={5} className="py-10 text-center text-sm text-muted-foreground">
+                    No classes found.
+                  </TableCell>
                 </TableRow>
               )}
             </TableBody>
