@@ -49,7 +49,7 @@ const createSchema = z.object({
   sclass: z.string().min(1, "Class is required"),
   amount: z.string().min(1, "Amount is required"),
   feeType: z.enum(["Tuition", "Library", "Exam", "Transport", "Other"], {
-    message: "Fee type is required",
+    message: "fee type is required",
   }),
   totalAmount: z.string().min(1, "Total amount is required"),
   paymentStatus: z.enum(["Paid", "Pending", "Partially Paid"], {
@@ -87,10 +87,9 @@ const FeesManagement = () => {
   const [submitting, setSubmitting] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Fetch fees from backend
   const fetchFees = useCallback(async () => {
     try {
-      const response = await get("/fees");
+      const response = await get(`/fees?_cb=${new Date().getTime()}`);
       if (response?.success && Array.isArray(response.fees)) {
         setFees(response.fees);
       } else if (Array.isArray(response)) {
@@ -103,10 +102,10 @@ const FeesManagement = () => {
       toast.error("Failed to load fees");
     }
   }, [get]);
-// Fetch classes from backend for dropdown
+
   const fetchClasses = useCallback(async () => {
     try {
-      const response = await get("/classes/all"); 
+      const response = await get(`/classes/all?_cb=${new Date().getTime()}`); 
       if (response?.success && Array.isArray(response.classes)) {
         setClasses(response.classes);
       } else if (Array.isArray(response)) {
@@ -117,16 +116,14 @@ const FeesManagement = () => {
     }
   }, [get]);
 
-// Fetch students based on selected class for dropdown
   const fetchStudentsByClassId = useCallback(async (classId) => {
     if (!classId || classes.length === 0) return;
     try {
       const targetClass = classes.find(c => String(c._id || c.id || "").trim().toLowerCase() === String(classId).trim().toLowerCase());
       const classIdentifier = targetClass?.sclassName || targetClass?.className || targetClass?.name || classId;
 
-      const response = await get(`/students/class/${encodeURIComponent(classIdentifier)}`);
+      const response = await get(`/students/class/${encodeURIComponent(classIdentifier)}?_cb=${new Date().getTime()}`);
       
-      // Fixed: Properly check for your "studentByClass" array key
       if (response?.success && Array.isArray(response.studentByClass)) {
         setStudents(response.studentByClass);
       } else if (response?.success && Array.isArray(response.students)) {
@@ -153,26 +150,49 @@ const FeesManagement = () => {
       setStudents([]);
     }
   }, [formState.sclass, fetchStudentsByClassId]);
-// Listen for global search events from admin dashboard
+
   useEffect(() => {
     const handler = (e) => setSearchTerm(e.detail ?? "");
     window.addEventListener("adminSearch", handler);
     return () => window.removeEventListener("adminSearch", handler);
   }, []);
 
-// Filter fees based on search term and payment status
+  const getStudentName = (studentObjOrId) => {
+    if (!studentObjOrId) return "Student";
+    if (typeof studentObjOrId === "object" && studentObjOrId.name) return studentObjOrId.name;
+    const targetId = typeof studentObjOrId === "object" ? (studentObjOrId._id || studentObjOrId.id) : studentObjOrId;
+    const found = students.find(s => String(s._id || s.id) === String(targetId));
+    if (found) return found.name || `${found.firstName || ""} ${found.lastName || ""}`.trim();
+    return "Student";
+  };
+
+  const getClassName = (classObjOrId) => {
+    if (!classObjOrId) return "N/A";
+    if (typeof classObjOrId === "object") {
+      return classObjOrId.sclassName || classObjOrId.className || classObjOrId.name || "N/A";
+    }
+    const targetId = classObjOrId;
+    const found = classes.find(c => String(c._id || c.id) === String(targetId));
+    if (found) return found.sclassName || found.className || found.name || "N/A";
+    return "N/A";
+  };
+
   const filteredFees = useMemo(() => {
     const lower = (searchTerm || "").toLowerCase();
     return fees.filter((fee) => {
+      const studentName = getStudentName(fee.student).toLowerCase();
+      const className = getClassName(fee.sclass).toLowerCase();
+      const feeType = (fee.feeType || "").toLowerCase();
+
       const matchesSearch =
-        (fee.student?.name || "").toLowerCase().includes(lower) ||
-        (fee.sclass?.sclassName || fee.sclass?.className || "").toLowerCase().includes(lower) ||
-        (fee.feeType || "").toLowerCase().includes(lower);
+        studentName.includes(lower) ||
+        className.includes(lower) ||
+        feeType.includes(lower);
       const matchesStatus =
         filterStatus === "all" || fee.paymentStatus === filterStatus;
       return matchesSearch && matchesStatus;
     });
-  }, [fees, searchTerm, filterStatus]);
+  }, [fees, searchTerm, filterStatus, students, classes]);
 
   const handleInputChange = (field, value) => {
     setFormState((prev) => {
@@ -192,9 +212,13 @@ const FeesManagement = () => {
     setIsDialogOpen(true);
   };
 
-  const handleEdit = (fee) => {
+  const handleEdit = async (fee) => {
     const classId = fee.sclass?._id || fee.sclass?.id || (typeof fee.sclass === "string" ? fee.sclass : "");
     const studentId = fee.student?._id || fee.student?.id || (typeof fee.student === "string" ? fee.student : "");
+
+    if (classId) {
+      await fetchStudentsByClassId(classId);
+    }
 
     setFormState({
       student: String(studentId).trim(),
@@ -211,7 +235,7 @@ const FeesManagement = () => {
     setIsEditMode(true);
     setIsDialogOpen(true);
   };
-// Handle form submission for creating/updating fee records
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -246,6 +270,7 @@ const FeesManagement = () => {
         toast.success(
           isEditMode ? "Fee updated successfully" : "Fee created successfully"
         );
+
         setIsDialogOpen(false);
         setIsEditMode(false);
         setEditingFeeId(null);
@@ -261,7 +286,7 @@ const FeesManagement = () => {
       setSubmitting(false);
     }
   };
-// Handle fee deletion with confirmation
+
   const handleDelete = async (feeId) => {
     if (!confirm("Are you sure you want to delete this fee record?")) {
       return;
@@ -280,7 +305,6 @@ const FeesManagement = () => {
     }
   };
 
-  // Handle manual refresh of fees and classes
   const handleRefresh = async () => {
     try {
       setRefreshing(true);
@@ -429,11 +453,8 @@ const FeesManagement = () => {
                     {students.length > 0 ? (
                       students.map((stud) => {
                         const id = String(stud._id || stud.id || "").trim();
-                        
-                      
                         const fullName = stud.name || `${stud.firstName || ""} ${stud.lastName || ""}`.trim() || "Unnamed Student";
                         const roll = stud.rollNum || stud.rollNumber;
-
                         return (
                           <SelectItem key={id} value={id}>
                             {fullName} {roll ? `(Roll: ${roll})` : ""}
@@ -582,14 +603,14 @@ const FeesManagement = () => {
                     <div className="flex-1 space-y-2">
                       <div className="flex items-center gap-2 flex-wrap">
                         <CardTitle className="text-lg text-foreground">
-                          {fee.student?.name || "Student"}
+                          {getStudentName(fee.student)}
                         </CardTitle>
                         <Badge variant={getStatusColor(fee.paymentStatus)}>
                           {fee.paymentStatus}
                         </Badge>
                       </div>
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span>Class: {fee.sclass?.sclassName || fee.sclass?.className || fee.sclass?.name || "N/A"}</span>
+                        <span>Class: {getClassName(fee.sclass)}</span>
                         <span>{fee.feeType}</span>
                       </div>
                     </div>

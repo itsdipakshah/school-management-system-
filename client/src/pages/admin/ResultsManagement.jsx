@@ -82,10 +82,10 @@ const ResultsManagement = () => {
   const [students, setStudents] = useState([]);
   const [subjects, setSubjects] = useState([]);
 
-  // Fetch results from backend
+  // Fetch results from backend with a cache-buster
   const fetchResults = useCallback(async () => {
     try {
-      const response = await get("/results");
+      const response = await get(`/results?_cb=${new Date().getTime()}`);
       if (response?.success && Array.isArray(response.results)) {
         setResults(response.results);
       } else if (Array.isArray(response)) {
@@ -102,7 +102,7 @@ const ResultsManagement = () => {
   // Fetch classes from backend for dropdown
   const fetchClasses = useCallback(async () => {
     try {
-      const response = await get("/classes/all");
+      const response = await get(`/classes/all?_cb=${new Date().getTime()}`);
       if (response?.success && Array.isArray(response.classes)) {
         setClasses(response.classes);
       } else if (Array.isArray(response)) {
@@ -131,7 +131,7 @@ const ResultsManagement = () => {
           classId;
 
         const response = await get(
-          `/students/class/${encodeURIComponent(classIdentifier)}`,
+          `/students/class/${encodeURIComponent(classIdentifier)}?_cb=${new Date().getTime()}`,
         );
         if (response?.success && Array.isArray(response.studentByClass)) {
           setStudents(response.studentByClass);
@@ -152,7 +152,7 @@ const ResultsManagement = () => {
   // Fetch subjects
   const fetchSubjects = useCallback(async () => {
     try {
-      const response = await get("/subjects");
+      const response = await get(`/subjects?_cb=${new Date().getTime()}`);
       if (response?.success && Array.isArray(response.subjects)) {
         setSubjects(response.subjects);
       } else if (Array.isArray(response)) {
@@ -173,7 +173,7 @@ const ResultsManagement = () => {
     fetchSubjects();
   }, [fetchResults, fetchClasses, fetchSubjects]);
 
-  // Fetch students reactively when class selection changes (Just like Fees Management)
+  // Fetch students reactively when class selection changes
   useEffect(() => {
     if (formState.sclass) {
       fetchStudentsByClassId(formState.sclass);
@@ -188,19 +188,83 @@ const ResultsManagement = () => {
     return () => window.removeEventListener("adminSearch", handler);
   }, []);
 
+  // Safe Dynamic Name Resolvers
+  const getStudentName = (studentObjOrId) => {
+    if (!studentObjOrId) return "Student";
+    if (typeof studentObjOrId === "object" && studentObjOrId.name)
+      return studentObjOrId.name;
+    const targetId =
+      typeof studentObjOrId === "object"
+        ? studentObjOrId._id || studentObjOrId.id
+        : studentObjOrId;
+    const found = students.find(
+      (s) => String(s._id || s.id) === String(targetId),
+    );
+    if (found)
+      return (
+        found.name || `${found.firstName || ""} ${found.lastName || ""}`.trim()
+      );
+    return "Student";
+  };
+
+  const getClassName = (classObjOrId) => {
+    if (!classObjOrId) return "N/A";
+    if (typeof classObjOrId === "object") {
+      return (
+        classObjOrId.className ||
+        classObjOrId.sclassName ||
+        classObjOrId.name ||
+        "N/A"
+      );
+    }
+    const targetId = classObjOrId;
+    const found = classes.find(
+      (c) => String(c._id || c.id) === String(targetId),
+    );
+    if (found)
+      return found.className || found.sclassName || found.name || "N/A";
+    return "N/A";
+  };
+
+  const getSubjectName = (subjectObjOrId) => {
+    if (!subjectObjOrId) return "N/A";
+    if (
+      typeof subjectObjOrId === "object" &&
+      (subjectObjOrId.subjectName || subjectObjOrId.name)
+    ) {
+      return subjectObjOrId.subjectName || subjectObjOrId.name;
+    }
+    const targetId =
+      typeof subjectObjOrId === "object"
+        ? subjectObjOrId._id || subjectObjOrId.id
+        : subjectObjOrId;
+    const found = subjects.find(
+      (s) => String(s._id || s.id) === String(targetId),
+    );
+    if (found) return found.subjectName || found.name || "N/A";
+    return "N/A";
+  };
+
   // Filter results based on search and exam type
   const filteredResults = useMemo(() => {
     const lower = (searchTerm || "").toLowerCase();
     return results.filter((result) => {
+      const studentName = getStudentName(result.student).toLowerCase();
+      const className = getClassName(result.sclass).toLowerCase();
+      const subjectName = getSubjectName(result.subject).toLowerCase();
+      const examType = (result.examType || "").toLowerCase();
+
       const matchesSearch =
-        (result.student?.name || "").toLowerCase().includes(lower) ||
-        (result.subject?.subjectName || "").toLowerCase().includes(lower) ||
-        (result.sclass?.className || result.sclass?.sclassName || "").toLowerCase().includes(lower);
+        studentName.includes(lower) ||
+        className.includes(lower) ||
+        subjectName.includes(lower) ||
+        examType.includes(lower);
+
       const matchesExamType =
         filterExamType === "all" || result.examType === filterExamType;
       return matchesSearch && matchesExamType;
     });
-  }, [results, searchTerm, filterExamType]);
+  }, [results, searchTerm, filterExamType, students, classes, subjects]);
 
   const handleInputChange = (field, value) => {
     setFormState((prev) => {
@@ -220,10 +284,23 @@ const ResultsManagement = () => {
     setIsDialogOpen(true);
   };
 
-  const handleEdit = (result) => {
-    const classId = result.sclass?._id || result.sclass?.id || (typeof result.sclass === "string" ? result.sclass : "");
-    const studentId = result.student?._id || result.student?.id || (typeof result.student === "string" ? result.student : "");
-    const subjectId = result.subject?._id || result.subject?.id || (typeof result.subject === "string" ? result.subject : "");
+  const handleEdit = async (result) => {
+    const classId =
+      result.sclass?._id ||
+      result.sclass?.id ||
+      (typeof result.sclass === "string" ? result.sclass : "");
+    const studentId =
+      result.student?._id ||
+      result.student?.id ||
+      (typeof result.student === "string" ? result.student : "");
+    const subjectId =
+      result.subject?._id ||
+      result.subject?.id ||
+      (typeof result.subject === "string" ? result.subject : "");
+
+    if (classId) {
+      await fetchStudentsByClassId(classId);
+    }
 
     setFormState({
       student: String(studentId).trim(),
@@ -321,6 +398,8 @@ const ResultsManagement = () => {
     try {
       setRefreshing(true);
       await fetchResults();
+      await fetchClasses();
+      await fetchSubjects();
       toast.success("Results refreshed");
     } finally {
       setRefreshing(false);
@@ -432,15 +511,23 @@ const ResultsManagement = () => {
               <div className="space-y-2">
                 <Label htmlFor="sclass">Class</Label>
                 <Select
-                  value={formState.sclass}
+                  value={
+                    formState.sclass ? String(formState.sclass).trim() : ""
+                  }
                   onValueChange={(value) => handleInputChange("sclass", value)}
                 >
-                  <SelectTrigger id="sclass" className="bg-background border-border">
+                  <SelectTrigger
+                    id="sclass"
+                    className="bg-background border-border"
+                  >
                     <SelectValue placeholder="Select Class" />
                   </SelectTrigger>
                   <SelectContent>
                     {classes.map((c) => (
-                      <SelectItem key={c._id || c.id} value={String(c._id || c.id)}>
+                      <SelectItem
+                        key={c._id || c.id}
+                        value={String(c._id || c.id).trim()}
+                      >
                         {c.className || c.sclassName || c.name}
                       </SelectItem>
                     ))}
@@ -452,17 +539,31 @@ const ResultsManagement = () => {
               <div className="space-y-2">
                 <Label htmlFor="student">Student</Label>
                 <Select
-                  value={formState.student}
+                  value={
+                    formState.student ? String(formState.student).trim() : ""
+                  }
                   onValueChange={(value) => handleInputChange("student", value)}
                   disabled={!formState.sclass || students.length === 0}
                 >
-                  <SelectTrigger id="student" className="bg-background border-border">
-                    <SelectValue placeholder={!formState.sclass ? "Select a class first" : "Select Student"} />
+                  <SelectTrigger
+                    id="student"
+                    className="bg-background border-border"
+                  >
+                    <SelectValue
+                      placeholder={
+                        !formState.sclass
+                          ? "Select a class first"
+                          : "Select Student"
+                      }
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     {students.map((student) => (
-                      <SelectItem key={student._id || student.id} value={String(student._id || student.id)}>
-                        {student.name} ({student.rollNum || "N/A"})
+                      <SelectItem
+                        key={student._id || student.id}
+                        value={String(student._id || student.id).trim()}
+                      >
+                        {student.firstName} ({student.rollNum || "N/A"})
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -475,15 +576,23 @@ const ResultsManagement = () => {
               <div className="space-y-2">
                 <Label htmlFor="subject">Subject</Label>
                 <Select
-                  value={formState.subject}
+                  value={
+                    formState.subject ? String(formState.subject).trim() : ""
+                  }
                   onValueChange={(value) => handleInputChange("subject", value)}
                 >
-                  <SelectTrigger id="subject" className="bg-background border-border">
+                  <SelectTrigger
+                    id="subject"
+                    className="bg-background border-border"
+                  >
                     <SelectValue placeholder="Select Subject" />
                   </SelectTrigger>
                   <SelectContent>
                     {subjects.map((sub) => (
-                      <SelectItem key={sub._id || sub.id} value={String(sub._id || sub.id)}>
+                      <SelectItem
+                        key={sub._id || sub.id}
+                        value={String(sub._id || sub.id).trim()}
+                      >
                         {sub.subjectName || sub.name}
                       </SelectItem>
                     ))}
@@ -592,7 +701,7 @@ const ResultsManagement = () => {
                       <div className="flex-1 space-y-2">
                         <div className="flex items-center gap-2 flex-wrap">
                           <CardTitle className="text-lg text-foreground">
-                            {result.student?.name || "Student"}
+                            {getStudentName(result.student)}
                           </CardTitle>
                           <Badge variant={getGradeColor(percentage)}>
                             <Award className="w-4 h-4 mr-1" />
@@ -600,10 +709,8 @@ const ResultsManagement = () => {
                           </Badge>
                         </div>
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span>
-                            Subject: {result.subject?.subjectName || "N/A"}
-                          </span>
-                          <span>Class: {result.sclass?.className || result.sclass?.sclassName || "N/A"}</span>
+                          <span>Subject: {getSubjectName(result.subject)}</span>
+                          <span>Class: {getClassName(result.sclass)}</span>
                         </div>
                       </div>
                       <DropdownMenu>
@@ -618,7 +725,9 @@ const ResultsManagement = () => {
                             Edit
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onClick={() => handleDelete(result._id || result.id)}
+                            onClick={() =>
+                              handleDelete(result._id || result.id)
+                            }
                             className="text-destructive"
                           >
                             <Trash2 className="w-4 h-4 mr-2" />
@@ -644,7 +753,9 @@ const ResultsManagement = () => {
                         <p className="font-semibold">{percentage}%</p>
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground">Exam Type</p>
+                        <p className="text-xs text-muted-foreground">
+                          Exam Type
+                        </p>
                         <p className="font-semibold">{result.examType}</p>
                       </div>
                       <div>

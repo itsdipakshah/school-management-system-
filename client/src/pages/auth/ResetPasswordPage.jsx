@@ -76,7 +76,7 @@ const ResetPasswordPage = () => {
 
   if (!isTokenValid) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4 py-16">
+      <div className="min-h-screen flex items-center justify-centerbg-gradient-to-l bg-[#AAC4F5] px-4 py-16">
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle>Invalid Reset Link</CardTitle>

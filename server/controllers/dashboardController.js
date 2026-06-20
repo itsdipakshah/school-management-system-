@@ -6,6 +6,7 @@ import Attendance from "../models/attendanceModel.js";
 import Result from "../models/resultModel.js";
 import Student from "../models/studentModel.js";
 import Teacher from "../models/teacherModel.js";
+import Complain from "../models/complainModel.js";
 
 export const getStudentDashboard = asyncHandler(async (req, res, next) => {
   const student = await Student.findOne({ user: req.user._id });
@@ -13,9 +14,10 @@ export const getStudentDashboard = asyncHandler(async (req, res, next) => {
     return next(new ErrorHandler("Student record not found", 404));
   }
 
-  const [notices, events, attendances, results] = await Promise.all([
+  const [notices, events, complain, attendances, results] = await Promise.all([
     Notice.find().sort({ date: -1 }).limit(10),
     Event.find({ eventDate: { $gte: new Date() } }).sort({ eventDate: 1 }).limit(10),
+    Complain.find({}),
     Attendance.find({ student: student._id, type: "student" }).sort({ date: -1 }),
     Result.find({ student: req.user._id })
       .populate("subject", "subjectName subjectCode")
@@ -36,6 +38,7 @@ export const getStudentDashboard = asyncHandler(async (req, res, next) => {
       },
       notices,
       events,
+      complain,
       attendances,
       results,
     },

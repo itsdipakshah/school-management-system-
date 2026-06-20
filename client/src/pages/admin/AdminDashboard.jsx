@@ -34,9 +34,14 @@ const AdminDashboard = () => {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [globalSearch, setGlobalSearch] = useState("");
   const [displayName, setDisplayName] = useState("User");
-
   const navigate = useNavigate();
   const { logout, user } = useAuth();
+
+   const handleLogout = () => {
+    logout();
+    navigate("/login");
+    toast.success("User logout successfully");
+  };
 
   useEffect(() => {
     if (user?.name) {
@@ -117,11 +122,7 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
-    toast.success("User logout successfully");
-  };
+ 
 
   const getInitials = (name) => {
     return name

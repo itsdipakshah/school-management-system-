@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -15,8 +15,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
+import { MagicCard } from "@/components/ui/magic-card"
 import { Input } from "@/components/ui/input";
 import useAuth from "@/hooks/UseAuth";
+import { useTheme } from "next-themes";
 
 // firstly schema
 const loginSchema = z.object({
@@ -79,11 +81,23 @@ const LoginPage = () => {
       toast.error("Login failed, try again");
     }
   };
+   const { theme, systemTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+  const isDark = mounted
+    ? (theme === "system" ? systemTheme : theme) === "dark"
+    : true
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 px-4 py-16">
+    <div className="min-h-screen flex items-center justify-center bg-[#AAC4F5] px-4 py-16">
       <form onSubmit={form.handleSubmit(onSubmit)} className="w-full max-w-md">
         <Card>
+        <MagicCard 
+        mode="orb"
+        glowFrom={isDark ? "#ee4f27" : "#E9D5FF"}
+        glowTo={isDark ? "#6b21ef" : "#FBCFE8"}>
           <CardHeader>
             <CardTitle className="text-center text-xl font-semibold">LOGIN PAGE</CardTitle>
             <CardDescription className="text-center">
@@ -166,6 +180,7 @@ const LoginPage = () => {
               <Link to="/forgot-password" className="text-blue-500 underline ml-4">Forget Password</Link>
             </div>
           </CardFooter>
+        </MagicCard>
         </Card>
       </form>
     </div>
