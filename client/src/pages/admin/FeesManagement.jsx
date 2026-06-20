@@ -87,6 +87,7 @@ const FeesManagement = () => {
   const [submitting, setSubmitting] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Fetch fees from backend
   const fetchFees = useCallback(async () => {
     try {
       const response = await get("/fees");
@@ -102,7 +103,7 @@ const FeesManagement = () => {
       toast.error("Failed to load fees");
     }
   }, [get]);
-
+// Fetch classes from backend for dropdown
   const fetchClasses = useCallback(async () => {
     try {
       const response = await get("/classes/all"); 
@@ -116,6 +117,7 @@ const FeesManagement = () => {
     }
   }, [get]);
 
+// Fetch students based on selected class for dropdown
   const fetchStudentsByClassId = useCallback(async (classId) => {
     if (!classId || classes.length === 0) return;
     try {
@@ -151,13 +153,14 @@ const FeesManagement = () => {
       setStudents([]);
     }
   }, [formState.sclass, fetchStudentsByClassId]);
-
+// Listen for global search events from admin dashboard
   useEffect(() => {
     const handler = (e) => setSearchTerm(e.detail ?? "");
     window.addEventListener("adminSearch", handler);
     return () => window.removeEventListener("adminSearch", handler);
   }, []);
 
+// Filter fees based on search term and payment status
   const filteredFees = useMemo(() => {
     const lower = (searchTerm || "").toLowerCase();
     return fees.filter((fee) => {
@@ -208,7 +211,7 @@ const FeesManagement = () => {
     setIsEditMode(true);
     setIsDialogOpen(true);
   };
-
+// Handle form submission for creating/updating fee records
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -258,7 +261,7 @@ const FeesManagement = () => {
       setSubmitting(false);
     }
   };
-
+// Handle fee deletion with confirmation
   const handleDelete = async (feeId) => {
     if (!confirm("Are you sure you want to delete this fee record?")) {
       return;
@@ -277,6 +280,7 @@ const FeesManagement = () => {
     }
   };
 
+  // Handle manual refresh of fees and classes
   const handleRefresh = async () => {
     try {
       setRefreshing(true);
@@ -426,7 +430,7 @@ const FeesManagement = () => {
                       students.map((stud) => {
                         const id = String(stud._id || stud.id || "").trim();
                         
-                        // Fixed: Formats name correctly via backend's firstName + lastName parameters
+                      
                         const fullName = stud.name || `${stud.firstName || ""} ${stud.lastName || ""}`.trim() || "Unnamed Student";
                         const roll = stud.rollNum || stud.rollNumber;
 

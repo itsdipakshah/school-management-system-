@@ -13,8 +13,8 @@ import {
 const router = express.Router();
 router.use(isAuthenticated);
 
-router.post("/student", authorizeRoles("Teacher"), markStudentAttendance);
-router.post("/teacher", authorizeRoles("Admin"), markTeacherAttendance);
+router.post("/createStd" ,authorizeRoles("Teacher") , markStudentAttendance);
+router.post("/create", authorizeRoles("Admin"), markTeacherAttendance);
 router.get("/my", authorizeRoles("Student", "Teacher"), getMyAttendance);
 router.get("/", authorizeRoles("Admin", "Teacher"), getAllAttendances);
 router.get("/:id", authorizeRoles("Admin", "Teacher", "Student"), getAttendanceById);

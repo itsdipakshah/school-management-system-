@@ -263,7 +263,7 @@ const StudentsManagement = () => {
         </Button>
       </div>
 
-      {/* Create / Edit Dialog */}
+      {/* Create ra Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-150 bg-card border-border">
           <DialogHeader>
