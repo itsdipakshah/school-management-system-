@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "../components/ui/button.jsx";
 import CustomButton from "@/components/common/CustomButton.jsx";
+import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button"
 
 const HomePage = () => {
   return (
@@ -28,16 +29,16 @@ const HomePage = () => {
 
             <div className="flex flex-col gap-4 sm:flex-row">
 
-              <CustomButton variant="primary" asChild className="min-w-[150px] justify-center">
+              <InteractiveHoverButton  asChild className="min-w-[150px] bg-blue-500 text-white hover:bg-blue-600 focus:ring-blue-300 disabled:bg-gray-400 justify-center">
                <Link to="/login">Login</Link>
-              </CustomButton>
-              <Button
-                asChild
-                variant="outline"
-                className="min-w-[150px] justify-center"
-              >
-                <Link to="/register">Register</Link>
-              </Button>
+              </InteractiveHoverButton>
+               <InteractiveHoverButton asChild 
+               className={"min-w-[150px] justify-center"}>
+                <Link to="/register">
+                Register
+                </Link>
+                </InteractiveHoverButton>
+             
             </div>
           </div>
           {/* Right side */}
