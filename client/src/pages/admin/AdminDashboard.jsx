@@ -59,15 +59,6 @@ const AdminDashboard = () => {
     }
   }, [user]);
 
-  useEffect(() => {
-    setGlobalSearch("");
-    try {
-      window.dispatchEvent(new CustomEvent("adminSearch", { detail: "" }));
-    } catch (err) {
-      console.error(err);
-    }
-  }, [activeSection]);
-
   const renderContent = () => {
     switch (activeSection) {
       case "dashboard":
@@ -188,26 +179,6 @@ const AdminDashboard = () => {
             </div>
 
             <div className="flex items-center gap-3">
-              <div className="hidden md:block relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search across collections..."
-                  className="w-[250px] pl-10 bg-secondary border-0 focus-visible:ring-1 focus-visible:ring-primary"
-                  value={globalSearch}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    setGlobalSearch(v);
-                    try {
-                      window.dispatchEvent(
-                        new CustomEvent("adminSearch", { detail: v }),
-                      );
-                    } catch (err) {
-                      console.error(err);
-                    }
-                  }}
-                />
-              </div>
-
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="relative">
