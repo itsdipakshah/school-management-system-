@@ -4,12 +4,13 @@ import useApi from '@/hooks/UseApi'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Users, GraduationCap, BookOpen, DollarSign, Calendar, TrendingUp, UserPlus, Clock } from 'lucide-react'
+import { Globe } from "@/components/ui/globe"
 
 const DashboardOverview = () => {
   const navigate = useNavigate()
   const { get } = useApi()
   const [counts, setCounts] = useState({})
-  const [totalRevenue, setTotalRevenue] = useState(0)
+  const [totalFee, setTotalFee] = useState(0)
   const [selectedDate, setSelectedDate] = useState(new Date())
 
   useEffect(() => {
@@ -36,7 +37,7 @@ const DashboardOverview = () => {
             return sum
           }, 0)
           
-          setTotalRevenue(collectedSum)
+          setTotalFee(collectedSum)
         }
       } catch (err) {
         console.error("Failed to aggregate dashboard overview data:", err)
@@ -44,14 +45,6 @@ const DashboardOverview = () => {
     }
     fetchOverviewData()
   }, [get])
-
-  const mockWeeklyAttendance = [
-    { day: "Mon", rate: 92 },
-    { day: "Tue", rate: 95 },
-    { day: "Wed", rate: 89 },
-    { day: "Thu", rate: 94 },
-    { day: "Fri", rate: 91 },
-  ]
 
   const mockRecentRegistrations = [
     { id: 1, type: "student", name: "Ananya Sharma", detail: "Enrolled in Grade 11", time: "2 hrs ago" },
@@ -82,8 +75,9 @@ const DashboardOverview = () => {
 
   return (
     <div className="pl-16 pr-4 py-6 space-y-6">
+      
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card>
+        <Card className="bg-green-100 hover:bg-green-200 border border-green-300/50 shadow-sm hover:shadow-xl hover:shadow-green-900/10 transition-all duration-300 ease-out hover:-translate-y-1.5 hover:scale-[1.02] animate-in fade-in slide-in-from-bottom-4 duration-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Students</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
@@ -94,7 +88,7 @@ const DashboardOverview = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-yellow-200 hover:bg-yellow-200 border border-yellow-300/50 shadow-sm hover:shadow-xl hover:shadow-yellow-900/10 transition-all duration-300 ease-out hover:-translate-y-1.5 hover:scale-[1.02] animate-in fade-in slide-in-from-bottom-4 duration-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Teachers</CardTitle>
             <GraduationCap className="h-4 w-4 text-muted-foreground" />
@@ -105,7 +99,7 @@ const DashboardOverview = () => {
           </CardContent>
         </Card>
 
-        <Card>
+       <Card className="bg-orange-200 hover:bg-orange-200 border border-orange-300/50 shadow-sm hover:shadow-xl hover:shadow-orange-900/10 transition-all duration-300 ease-out hover:-translate-y-1.5 hover:scale-[1.02] animate-in fade-in slide-in-from-bottom-4 duration-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active Classes</CardTitle>
             <BookOpen className="h-4 w-4 text-muted-foreground" />
@@ -116,7 +110,7 @@ const DashboardOverview = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-green-200 hover:bg-green-200 border border-green-300/50 shadow-sm hover:shadow-xl hover:shadow-green-900/10 transition-all duration-300 ease-out hover:-translate-y-1.5 hover:scale-[1.02] animate-in fade-in slide-in-from-bottom-4 duration-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Revenue Collected</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
@@ -130,37 +124,8 @@ const DashboardOverview = () => {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="text-base font-semibold flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-primary" /> Attendance Tracker Trend (%)
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-4">
-            <div className="h-48 w-full flex items-end justify-between px-2 border-b border-border relative">
-              <div className="absolute left-0 top-0 h-full w-full flex flex-col justify-between pointer-events-none opacity-20">
-                <div className="border-t border-dashed border-muted-foreground w-full text-[10px]">100%</div>
-                <div className="border-t border-dashed border-muted-foreground w-full text-[10px]">50%</div>
-                <div className="w-full text-[10px]">0%</div>
-              </div>
-              {mockWeeklyAttendance.map((item, idx) => (
-                <div key={idx} className="flex flex-col items-center flex-1 group z-10">
-                  <div className="text-xs font-medium mb-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    {item.rate}%
-                  </div>
-                  <div 
-                    style={{ height: `${item.rate}%` }} 
-                    className="w-8 bg-primary rounded-t transition-all duration-500 hover:bg-primary/80"
-                  />
-                  <span className="text-xs text-muted-foreground mt-2">{item.day}</span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
+       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+        <Card className="bg-sky-200 hover:bg-sky-200 border border-sky-300/50 shadow-sm hover:shadow-xl hover:shadow-sky-900/10 transition-all duration-300 ease-out hover:-translate-y-1.5 hover:scale-[1.02] animate-in fade-in slide-in-from-bottom-4 duration-500">
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-semibold flex items-center gap-2">
               <Calendar className="h-4 w-4 text-primary" /> 
@@ -168,8 +133,8 @@ const DashboardOverview = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-7 gap-1 text-center text-xs font-semibold text-muted-foreground mb-2">
-              <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
+            <div className="grid grid-cols-7 gap-1 text-center text-xs font-semibold  mb-2">
+              <div className='text-red-600'>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div className='text-red-600'>S</div>
             </div>
             <div className="grid grid-cols-7 gap-1 text-center text-xs">
               {generateCalendarDays().map((day, index) => {
@@ -189,10 +154,19 @@ const DashboardOverview = () => {
             </div>
           </CardContent>
         </Card>
+        <div className="bg-background relative flex size-full max-w-lg items-center justify-center overflow-hidden rounded-lg border px-40 pt-8 pb-40 md:pb-60">
+      <span className="pointer-events-none bg-linear-to-b from-black to-gray-300/80 bg-clip-text text-center text-8xl leading-none font-semibold whitespace-pre-wrap text-transparent dark:from-white dark:to-slate-900/10">
+        Globe
+      </span>
+      <Globe className="top-28" />
+      <div className="pointer-events-none absolute inset-0 h-full bg-[radial-gradient(circle_at_50%_200%,rgba(0,0,0,0.2),rgba(255,255,255,0))]" />
+    </div>
       </div>
 
+     
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card>
+        <Card className="bg-green-200 hover:bg-green-200 border border-green-300/50 shadow-sm hover:shadow-xl hover:shadow-green-900/10 transition-all duration-300 ease-out hover:-translate-y-1.5 hover:scale-[1.02] animate-in fade-in slide-in-from-bottom-4 duration-500">
           <CardHeader>
             <CardTitle className="text-base font-semibold flex items-center gap-2">
               <UserPlus className="h-4 w-4 text-primary" /> Recent Onboardings
@@ -218,7 +192,7 @@ const DashboardOverview = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className=" hover:bg-sky-200 border border-blue-300/50 shadow-sm hover:shadow-xl hover:shadow-black-900/10 transition-all duration-300 ease-out hover:-translate-y-1.5 hover:scale-[1.02] animate-in fade-in slide-in-from-bottom-4 duration-500">
           <CardHeader>
             <CardTitle className="text-base font-semibold">Upcoming Campus Events</CardTitle>
           </CardHeader>
@@ -235,7 +209,7 @@ const DashboardOverview = () => {
           </CardContent>
         </Card>
 
-        <Card>
+         <Card className="bg-[#B5BAFF] hover:bg-blue-100 border border-blue-300/50 shadow-sm hover:shadow-xl hover:shadow-black-900/10 transition-all duration-300 ease-out hover:-translate-y-1.5 hover:scale-[1.02] animate-in fade-in slide-in-from-bottom-4 duration-500">
           <CardHeader>
             <CardTitle className="text-base font-semibold">Recent Operations Logs</CardTitle>
           </CardHeader>
@@ -264,38 +238,6 @@ const DashboardOverview = () => {
           </CardContent>
         </Card>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base font-semibold">Quick Actions Panel</CardTitle>
-        </CardHeader>
-        <CardContent className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <button 
-            onClick={() => navigate('/admin/dashboard')} 
-            className="p-3 text-center text-sm font-medium rounded border border-border bg-card hover:bg-muted transition-colors"
-          >
-            Manage Students
-          </button>
-          <button 
-            onClick={() => navigate('/admin/dashboard')} 
-            className="p-3 text-center text-sm font-medium rounded border border-border bg-card hover:bg-muted transition-colors"
-          >
-            Manage Teachers
-          </button>
-          <button 
-            onClick={() => navigate('/admin/dashboard')} 
-            className="p-3 text-center text-sm font-medium rounded border border-border bg-card hover:bg-muted transition-colors"
-          >
-            Take Attendance
-          </button>
-          <button 
-            onClick={() => navigate('/admin/dashboard')} 
-            className="p-3 text-center text-sm font-medium rounded border border-border bg-card hover:bg-muted transition-colors"
-          >
-            Fees Management
-          </button>
-        </CardContent>
-      </Card>
     </div>
   )
 }

@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useApi from '@/hooks/UseApi'
 import { toast } from 'sonner'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -149,7 +149,6 @@ const StudentsManagement = () => {
     setIsViewOpen(true)
   }
 
-  //edit actions handler
   const handleEdit = (student) => {
     setFormState({
       firstName: student.firstName || '',
@@ -229,7 +228,6 @@ const StudentsManagement = () => {
   }
 
   const handleDelete = async (studentId) => {
-   
     try {
       await del(`/students/${studentId}`)
       toast.success('Student deleted successfully')
@@ -263,7 +261,6 @@ const StudentsManagement = () => {
         </Button>
       </div>
 
-      {/* Create ra Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-150 bg-card border-border">
           <DialogHeader>
@@ -321,7 +318,6 @@ const StudentsManagement = () => {
         </DialogContent>
       </Dialog>
 
-      {/* View Dialog ko lagi code*/}
       <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
         <DialogContent className="sm:max-w-150 bg-card border-border">
           <DialogHeader>
@@ -332,6 +328,7 @@ const StudentsManagement = () => {
               <div className="grid gap-2">
                 <div className="flex items-center gap-4">
                   <Avatar>
+                    <AvatarImage src={viewStudent.studentAvatar.url || viewStudent.avatar} alt="Student Avatar" />
                     <AvatarFallback className="bg-primary/10 text-primary">{`${viewStudent.firstName?.[0] ?? ''}${viewStudent.lastName?.[0] ?? ''}`}</AvatarFallback>
                   </Avatar>
                   <div>
@@ -404,6 +401,7 @@ const StudentsManagement = () => {
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar>
+                          <AvatarImage src={student.studentAvatar.url || student.avatar} alt="Student Avatar" />
                           <AvatarFallback className="bg-primary/10 text-primary">{`${student.firstName?.[0] ?? ''}${student.lastName?.[0] ?? ''}`}</AvatarFallback>
                         </Avatar>
                         <div>

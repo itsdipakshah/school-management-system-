@@ -71,7 +71,7 @@ export const registerTeacher = asyncHandler(async (req, res, next) => {
 
 export const getAllTeachers = asyncHandler(async (req, res) => {
   const teachers = await Teacher.find().select(
-    "name email phone school teachSubject teachSclass salary"
+    "name email phone school teachSubject teacherAvatar teachSclass salary"
   );
 
   res.status(200).json({
@@ -81,7 +81,7 @@ export const getAllTeachers = asyncHandler(async (req, res) => {
 });
 
 export const getTeacherById = asyncHandler(async (req, res, next) => {
-  const teacher = await Teacher.findById(req.params.id);
+  const teacher = await Teacher.findById(req.params.id).populate('user');
   if (!teacher) {
     return next(new ErrorHandler("Teacher not found", 404));
   }

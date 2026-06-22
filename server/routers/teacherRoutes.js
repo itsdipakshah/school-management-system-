@@ -10,11 +10,11 @@ import {
 
 const router = express.Router();
 router.use(isAuthenticated);
-router.use(authorizeRoles("Admin"));
+router.use(authorizeRoles("Admin","Teacher"));
 
 router.post("/register",authorizeRoles("Admin"), registerTeacher);
 router.get("/", getAllTeachers);
-router.get("/:id", getTeacherById);
+router.get("/:id", authorizeRoles("Teacher","Admin"), getTeacherById);
 router.put("/:id", updateTeacher);
 router.delete("/:id", deleteTeacher);
 

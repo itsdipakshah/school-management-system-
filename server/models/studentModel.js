@@ -28,6 +28,14 @@ const studentSchema = new mongoose.Schema(
       type: Date,
       required: true,
     },
+    phone:{
+      type: String,
+      required:true,
+    },
+    address:{
+      type: String,
+      required:true,
+    },
     rollNum: {
       type: Number,
       required: true,

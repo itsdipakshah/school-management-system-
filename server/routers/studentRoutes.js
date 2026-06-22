@@ -11,12 +11,12 @@ import {
 
 const router = express.Router();
 router.use(isAuthenticated);
-router.use(authorizeRoles("Admin"));
+// router.use(authorizeRoles("Admin"));
 
 router.post("/register", registerStudent);
 router.get("/", getAllStudents);
 router.get("/class/:sclassName", getStudentsByClass);
-router.get("/:id", getStudentById);
+router.get("/:id", authorizeRoles("Student","Admin","Teacher"), getStudentById);
 router.put("/:id", updateStudent);
 router.delete("/:id", deleteStudent);
 

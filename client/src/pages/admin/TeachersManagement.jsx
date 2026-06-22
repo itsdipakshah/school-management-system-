@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useApi from '@/hooks/UseApi'
 import { toast } from 'sonner'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -269,6 +269,7 @@ const TeachersManagement = () => {
               <div className="grid gap-2">
                 <div className="flex items-center gap-4">
                   <Avatar>
+                     <AvatarImage src={viewTeacher.teacherAvatar.url || viewTeacher.avatar} alt="Teacher Avatar" />
                     <AvatarFallback className="bg-primary/10 text-primary">{`${viewTeacher.name?.[0] ?? ''}`}</AvatarFallback>
                   </Avatar>
                   <div>
@@ -330,6 +331,7 @@ const TeachersManagement = () => {
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar>
+                          <AvatarImage src={teacher.teacherAvatar.url || teacher.avatar} alt="Teacher Avatar" />
                           <AvatarFallback className="bg-primary/10 text-primary">{`${teacher.name?.[0] ?? ''}`}</AvatarFallback>
                         </Avatar>
                         <div>

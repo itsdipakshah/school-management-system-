@@ -87,7 +87,7 @@ export const registerStudent = asyncHandler(async (req, res, next) => {
 
 export const getAllStudents = asyncHandler(async (req, res) => {
   const students = await Student.find().select(
-    "firstName lastName email rollNum sclassName schoolName user"
+    "firstName lastName email rollNum phone address studentAvatar sclassName schoolName user"
   );
   res.status(200).json({
     success: true,
@@ -108,8 +108,9 @@ export const getStudentById = asyncHandler(async (req, res, next) => {
 });
 
 export const getStudentsByClass = asyncHandler(async (req, res) => {
+  
   const studentByClass = await Student.find({ sclassName: req.params.sclassName }).select(
-    "firstName lastName email rollNum sclassName schoolName user"
+    "name firstName lastName email rollNum sclassName schoolName user"
   );
    res.status(200).json({
     success: true,
