@@ -71,7 +71,7 @@ export const registerTeacher = asyncHandler(async (req, res, next) => {
 
 export const getAllTeachers = asyncHandler(async (req, res) => {
   const teachers = await Teacher.find().select(
-    "name email phone school teachSubject teacherAvatar teachSclass salary"
+    "name email phone school teachSubject teacherAvatar teachSclass attendance salary"
   );
 
   res.status(200).json({

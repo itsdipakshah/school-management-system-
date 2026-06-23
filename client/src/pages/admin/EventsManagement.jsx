@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -87,7 +86,6 @@ const EventsManagement = () => {
   const [submitting, setSubmitting] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Fetch events from backend
   const fetchEvents = useCallback(async () => {
     try {
       const response = await get("/events");
@@ -114,7 +112,6 @@ const EventsManagement = () => {
     return () => window.removeEventListener("adminSearch", handler);
   }, []);
 
-  // Filter events based on search and type
   const filteredEvents = useMemo(() => {
     const lower = (searchTerm || "").toLowerCase();
     return events.filter((event) => {
@@ -122,8 +119,9 @@ const EventsManagement = () => {
         (event.title || "").toLowerCase().includes(lower) ||
         (event.description || "").toLowerCase().includes(lower);
       const matchesEventType =
-        filterEventType === "all" || event.eventType === filterEventType;
-      return matchesSearch && matchesEventType; ``
+        filterEventType === "all" || 
+        (event.eventType || "").toLowerCase() === filterEventType;
+      return matchesSearch && matchesEventType;
     });
   }, [events, searchTerm, filterEventType]);
 
@@ -162,11 +160,16 @@ const EventsManagement = () => {
   };
 
   const handleEdit = (event) => {
+    // FIX 1: Safely normalize backend eventType string casing to match frontend dropdown values
+    const safeEventType = event.eventType 
+      ? event.eventType.toLowerCase().trim() 
+      : "other";
+
     setFormState({
       title: event.title || "",
       description: event.description || "",
-      eventType: event.eventType || "other",
-      eventDate: new Date(event.eventDate).toISOString().split("T")[0],
+      eventType: safeEventType,
+      eventDate: event.eventDate ? new Date(event.eventDate).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
       startTime: event.startTime || "09:00",
       endTime: event.endTime || "10:00",
       location: event.location || "",
@@ -202,6 +205,12 @@ const EventsManagement = () => {
       formData.append("startTime", formState.startTime);
       formData.append("endTime", formState.endTime);
       formData.append("location", formState.location);
+      
+      // FIX 2: Check your backend expectations. If your backend strictly requires capitalized words 
+      // (like "Academic"), uncomment the two lines below to format the value back before shipping:
+      // const structuredPayloadValue = formState.eventType.charAt(0).toUpperCase() + formState.eventType.slice(1);
+      // formData.append("eventType", structuredPayloadValue);
+      
       formData.append("eventType", formState.eventType);
 
       if (formState.eventImage) {
@@ -270,7 +279,7 @@ const EventsManagement = () => {
   };
 
   const getEventTypeColor = (eventType) => {
-    switch (eventType) {
+    switch (eventType?.toLowerCase()) {
       case "academic":
         return "destructive";
       case "extracurricular":
@@ -283,7 +292,7 @@ const EventsManagement = () => {
   };
 
   const getEventTypeLabel = (eventType) => {
-    switch (eventType) {
+    switch (eventType?.toLowerCase()) {
       case "academic":
         return "Academic";
       case "extracurricular":
@@ -310,7 +319,6 @@ const EventsManagement = () => {
 
   return (
     <div className="pl-16 pr-4 py-6">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-foreground">Events</h2>
@@ -335,7 +343,6 @@ const EventsManagement = () => {
         </div>
       </div>
 
-      {/* Search and Filter */}
       <Card className="bg-card border-border">
         <CardContent className="pt-6">
           <div className="flex flex-col sm:flex-row gap-4">
@@ -353,7 +360,7 @@ const EventsManagement = () => {
                 <SelectTrigger className="sm:w-[180px] bg-background border-border">
                   <SelectValue placeholder="Filter by type" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-[100] pointer-events-auto">
                   <SelectItem value="all">All Events</SelectItem>
                   <SelectItem value="academic">Academic</SelectItem>
                   <SelectItem value="extracurricular">Extracurricular</SelectItem>
@@ -370,9 +377,11 @@ const EventsManagement = () => {
         </CardContent>
       </Card>
 
-      {/* Add/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[600px] bg-card border-border max-h-[90vh] overflow-y-auto">
+        <DialogContent 
+          className="sm:max-w-[600px] bg-card border-border max-h-[90vh] overflow-y-auto"
+          onPointerDownOutside={(e) => e.preventDefault()}
+        >
           <DialogHeader>
             <DialogTitle className="text-foreground">
               {isEditMode ? "Edit Event" : "Create New Event"}
@@ -422,7 +431,10 @@ const EventsManagement = () => {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="eventType">Event Type</Label>
+                
+                {/* FIX 3: Explicitly set modal={true} on the Select Root layout */}
                 <Select
+                  modal={true}
                   value={formState.eventType}
                   onValueChange={(value) =>
                     handleInputChange("eventType", value)
@@ -431,7 +443,9 @@ const EventsManagement = () => {
                   <SelectTrigger id="eventType">
                     <SelectValue placeholder="Select event type" />
                   </SelectTrigger>
-                  <SelectContent>
+                  
+                  {/* FIX 4: Explicit z-index and pointer configuration bypasses Radix limits */}
+                  <SelectContent position="popper" className="z-[100] pointer-events-auto">
                     <SelectItem value="academic">Academic</SelectItem>
                     <SelectItem value="extracurricular">
                       Extracurricular
@@ -475,7 +489,6 @@ const EventsManagement = () => {
               />
             </div>
 
-            {/* Image Upload Section */}
             <div className="space-y-2">
               <Label htmlFor="image">Event Image</Label>
               <div className="border-2 border-dashed border-border rounded-lg p-4">
@@ -560,7 +573,6 @@ const EventsManagement = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Events List - Responsive Grid Cards */}
       {filteredEvents.length > 0 ? (
         <div className="grid gap-4 grid-cols-1">
           {filteredEvents.map((event) => (
@@ -569,7 +581,6 @@ const EventsManagement = () => {
               className="bg-card border-border overflow-hidden"
             >
               <div className="flex flex-col sm:flex-row">
-                {/* Image */}
                 {event.eventImage?.url && (
                   <div className="sm:w-48 w-full h-40 sm:h-auto overflow-hidden flex-shrink-0">
                     <img
@@ -580,7 +591,6 @@ const EventsManagement = () => {
                   </div>
                 )}
 
-                {/* Content */}
                 <div className="flex-1 flex flex-col justify-between">
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between gap-2">
@@ -659,7 +669,6 @@ const EventsManagement = () => {
         </Card>
       )}
 
-      {/* Stats Card */}
       {events.length > 0 && (
         <Card className="bg-card border-border">
           <CardHeader>
@@ -676,14 +685,14 @@ const EventsManagement = () => {
               <div className="space-y-1">
                 <p className="text-sm text-muted-foreground">Academic</p>
                 <p className="text-2xl font-bold text-foreground">
-                  {events.filter((e) => e.eventType === "academic").length}
+                  {events.filter((e) => e.eventType?.toLowerCase() === "academic").length}
                 </p>
               </div>
               <div className="space-y-1">
                 <p className="text-sm text-muted-foreground">Extracurricular</p>
                 <p className="text-2xl font-bold text-foreground">
                   {
-                    events.filter((e) => e.eventType === "extracurricular")
+                    events.filter((e) => e.eventType?.toLowerCase() === "extracurricular")
                       .length
                   }
                 </p>
@@ -691,7 +700,7 @@ const EventsManagement = () => {
               <div className="space-y-1">
                 <p className="text-sm text-muted-foreground">Other</p>
                 <p className="text-2xl font-bold text-foreground">
-                  {events.filter((e) => e.eventType === "other").length}
+                  {events.filter((e) => e.eventType?.toLowerCase() === "other").length}
                 </p>
               </div>
             </div>
