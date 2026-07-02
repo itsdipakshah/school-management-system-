@@ -5,7 +5,7 @@ import Student from "../models/studentModel.js";
 import Teacher from "../models/teacherModel.js";
 
 export const markStudentAttendance = asyncHandler(async (req, res, next) => {
-  const { student, name, class:studentClass, status, date, subName } = req.body;
+  const { student, name, class: studentClass, status, date, subName } = req.body;
 
   if (!student || !name || !studentClass || !status) {
     return next(new ErrorHandler("Student attendance fields are required", 400));
@@ -16,8 +16,29 @@ export const markStudentAttendance = asyncHandler(async (req, res, next) => {
     return next(new ErrorHandler("Student not found", 404));
   }
 
+  // If request is from a Teacher, validate that teacher is allowed to mark
+  // attendance for this class and subject. Also attach teacher id to record.
+  let teacherIdToAttach = null;
+  if (req.user?.role === "Teacher") {
+    const teacher = await Teacher.findOne({ user: req.user._id });
+    if (!teacher) return next(new ErrorHandler("Teacher record not found", 404));
+
+    // Validate class match (teacher teaches this class)
+    if (String(teacher.teachSclass).trim() !== String(studentClass).trim()) {
+      return next(new ErrorHandler("You are not authorized to mark attendance for this class", 403));
+    }
+
+    // Validate subject lock (if provided)
+    if (subName && teacher.teachSubject && String(teacher.teachSubject).trim() !== String(subName).trim()) {
+      return next(new ErrorHandler("You are not authorized to mark attendance for this subject", 403));
+    }
+
+    teacherIdToAttach = teacher._id;
+  }
+
   const attendance = await Attendance.create({
     student,
+    teacher: teacherIdToAttach,
     type: "student",
     name,
     class: studentClass,
@@ -25,6 +46,20 @@ export const markStudentAttendance = asyncHandler(async (req, res, next) => {
     date: date ? new Date(date) : new Date(),
     subName: subName || "",
   });
+
+  // Also append to student.attendance subdocument for quick lookup
+  try {
+    studentExists.attendance = studentExists.attendance || [];
+    studentExists.attendance.push({
+      date: attendance.date,
+      status: attendance.status,
+      subName: attendance.subName || "",
+    });
+    await studentExists.save();
+  } catch (err) {
+    // don't fail the request if student save fails; log and continue
+    console.error("Failed to push attendance to student record:", err);
+  }
 
   res.status(201).json({
     success: true,

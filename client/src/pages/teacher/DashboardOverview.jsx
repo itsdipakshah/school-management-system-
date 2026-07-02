@@ -25,6 +25,9 @@ const DashboardOverview = () => {
 
   const [profileDetails, setProfileDetails] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [totalStudents, setTotalStudents] = useState(0);
+  const [totalPresent, setTotalPresent] = useState(0);
+  const [totalAbsent, setTotalAbsent] = useState(0);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -48,6 +51,37 @@ const DashboardOverview = () => {
     
     fetchProfile();
   }, [get, user?.email]);
+
+  useEffect(() => {
+    const computeAttendance = async () => {
+      if (!profileDetails) return;
+      try {
+        // fetch students in this class
+        const stuRes = await get(`/students/class/${encodeURIComponent(profileDetails.teachSclass)}`);
+        const students = stuRes?.studentByClass || stuRes?.students || [];
+        setTotalStudents(Array.isArray(students) ? students.length : 0);
+
+        // fetch attendances and filter by class + today's date
+        const attRes = await get(`/attendances`);
+        const attendances = attRes?.attendances || [];
+        const todayKey = new Date().toISOString().split("T")[0];
+        const classAttendances = (attendances || []).filter((a) => {
+          const aClass = a.class || a.sclass || "";
+          const aDateKey = a.date ? new Date(a.date).toISOString().split("T")[0] : "";
+          const subjectMatch = !profileDetails.teachSubject || !a.subName || String(a.subName).trim() === String(profileDetails.teachSubject).trim();
+          return String(aClass).trim() === String(profileDetails.teachSclass).trim() && aDateKey === todayKey && subjectMatch;
+        });
+
+        const present = classAttendances.filter((c) => c.status === "Present").length;
+        const absent = classAttendances.filter((c) => c.status === "Absent").length;
+        setTotalPresent(present);
+        setTotalAbsent(absent);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    computeAttendance();
+  }, [get, profileDetails]);
 
   if (loading) return <div>Loading profile records...</div>;
   if (!profileDetails) return <div>No matching teacher profile found.</div>;
@@ -125,7 +159,27 @@ const DashboardOverview = () => {
         
         </div>
         <div>
-
+        <Card className="border-border">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg font-semibold">Today's Attendance</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500">Total Students</span>
+                <span className="font-medium">{totalStudents}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500">Present</span>
+                <span className="font-medium text-green-600">{totalPresent}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500">Absent</span>
+                <span className="font-medium text-red-600">{totalAbsent}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
         </div>
         
       </div>

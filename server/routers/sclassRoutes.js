@@ -10,12 +10,11 @@ import {
 
 const router = express.Router();
 router.use(isAuthenticated);
-router.use(authorizeRoles("Admin"));
 
-router.post("/create", createClass);
-router.get("/all", getAllClasses);
-router.get("/:id", getClassById);
-router.put("/:id", updateClass);
-router.delete("/:id", deleteClass);
+router.post("/create", authorizeRoles("Admin"), createClass);
+router.get("/all", authorizeRoles("Admin", "Teacher"), getAllClasses);
+router.get("/:id", authorizeRoles("Admin", "Teacher"), getClassById);
+router.put("/:id", authorizeRoles("Admin"), updateClass);
+router.delete("/:id", authorizeRoles("Admin"), deleteClass);
 
 export default router;

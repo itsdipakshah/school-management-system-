@@ -37,6 +37,27 @@ export const addResult = asyncHandler(async (req, res, next) => {
     return next(new ErrorHandler("Class not found", 404));
   }
 
+  const existingResults = await Result.find({ student, sclass, subject });
+  if (existingResults.length) {
+    const existingResult = existingResults[0];
+    existingResult.marksObtained = marksObtained;
+    existingResult.totalMarks = totalMarks || 100;
+    existingResult.examType = examType;
+    existingResult.grade = grade || calculateGrade(marksObtained, totalMarks || 100);
+    await existingResult.save();
+
+    if (existingResults.length > 1) {
+      const duplicateIds = existingResults.slice(1).map((item) => item._id);
+      await Result.deleteMany({ _id: { $in: duplicateIds } });
+    }
+
+    return res.status(200).json({
+      success: true,
+      result: existingResult,
+      updated: true,
+    });
+  }
+
   const result = await Result.create({
     student,
     sclass,
