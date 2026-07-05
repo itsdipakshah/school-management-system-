@@ -1,5 +1,6 @@
 import app from './app.js';
 import cloudinary from 'cloudinary';
+import { scheduleMidnightAttendanceReset } from './utils/attendanceReset.js';
 
 //Cloudinary configuration
 cloudinary.v2.config({
@@ -12,6 +13,8 @@ cloudinary.v2.config({
 const server = app.listen(process.env.PORT,()=>{
     console.log(`Server is running on port ${process.env.PORT}`);
 });
+
+scheduleMidnightAttendanceReset();
 
 
 

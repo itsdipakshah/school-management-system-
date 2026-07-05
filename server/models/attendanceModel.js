@@ -25,6 +25,11 @@ const attendanceSchema = new mongoose.Schema(
       type: String,
       required: false,
     },
+    subName: {
+      type: String,
+      required: false,
+      trim: true,
+    },
     date: {
       type: Date,
       required: true,

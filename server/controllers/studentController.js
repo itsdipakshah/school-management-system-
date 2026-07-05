@@ -107,16 +107,40 @@ export const getStudentById = asyncHandler(async (req, res, next) => {
   });
 });
 
+const normalizeClassValue = (value) => {
+  if (value === null || value === undefined || value === "") return "";
+  const text = String(value).trim().toLowerCase();
+  const numericMatch = text.match(/(\d+)/);
+  if (numericMatch) return numericMatch[1];
+  return text.replace(/^class\s*/, "").replace(/\s+/g, "");
+};
+
 export const getStudentsByClass = asyncHandler(async (req, res) => {
-  
-  const studentByClass = await Student.find({ sclassName: req.params.sclassName }).select(
-    "name firstName lastName email rollNum sclassName schoolName user"
-  );
-   res.status(200).json({
+  const incomingClassName = req.params.sclassName || "";
+  const incomingKey = normalizeClassValue(incomingClassName);
+
+  const classRecords = await Sclass.find({}).select("sclassName");
+  const matchingClassNames = classRecords
+    .map((item) => item.sclassName)
+    .filter(Boolean)
+    .filter((name) => normalizeClassValue(name) === incomingKey);
+
+  const classFilters = [incomingClassName, ...matchingClassNames].filter(Boolean);
+  const classPattern = incomingKey
+    ? new RegExp(`(^|[^\\d])${incomingKey}([^\\d]|$)`, "i")
+    : null;
+
+  const studentByClass = await Student.find({
+    $or: [
+      { sclassName: { $in: classFilters } },
+      ...(classPattern ? [{ sclassName: { $regex: classPattern } }] : []),
+    ],
+  }).select("name firstName lastName email rollNum sclassName schoolName user");
+
+  res.status(200).json({
     success: true,
     studentByClass,
   });
-
 });
 
 

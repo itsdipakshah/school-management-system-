@@ -302,10 +302,11 @@ const StudentResult = () => {
         const marksObtained = result.marksObtained !== undefined ? String(result.marksObtained) : "";
         const totalMarks = result.totalMarks ?? DEFAULT_TOTAL_MARKS;
         const percentage = marksObtained !== "" ? Number((parseFloat(marksObtained) / totalMarks) * 100) : 0;
+        const studentLookupRecord = studentLookup.get(String(student._id || student.id || ""));
         return {
           id: String(result._id || result.id || student._id || student.id || marksObtained),
           studentId: String(student._id || student.id || ""),
-          name: formatStudentName(student),
+          name: formatStudentName(studentLookupRecord || student),
           className: selectedClassName || "-",
           subjectName: teacherSubjectName || "-",
           totalMarks,
@@ -318,7 +319,7 @@ const StudentResult = () => {
       })
       .sort((a, b) => b.rankValue - a.rankValue)
       .map((row, index) => ({ ...row, rank: index + 1 }));
-  }, [results, selectedClassId, selectedClassName, teacherSubjectDoc, teacherSubjectName]);
+  }, [results, selectedClassId, selectedClassName, teacherSubjectDoc, teacherSubjectName, studentLookup]);
 
   const handleMarksChange = (studentId, value) => {
     const cleaned = value.replace(/[^0-9.]/g, "");

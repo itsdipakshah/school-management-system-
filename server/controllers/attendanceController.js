@@ -23,12 +23,21 @@ export const markStudentAttendance = asyncHandler(async (req, res, next) => {
     const teacher = await Teacher.findOne({ user: req.user._id });
     if (!teacher) return next(new ErrorHandler("Teacher record not found", 404));
 
-    // Validate class match (teacher teaches this class)
-    if (String(teacher.teachSclass).trim() !== String(studentClass).trim()) {
+    const normalizeClassValue = (value) => {
+      if (value === null || value === undefined || value === "") return "";
+      const text = String(value).trim().toLowerCase();
+      const numericMatch = text.match(/(\d+)/);
+      if (numericMatch) return numericMatch[1];
+      return text.replace(/^class\s*/, "").replace(/\s+/g, "");
+    };
+
+    const teacherClassKey = normalizeClassValue(teacher.teachSclass);
+    const studentClassKey = normalizeClassValue(studentClass);
+
+    if (teacherClassKey && studentClassKey && teacherClassKey !== studentClassKey) {
       return next(new ErrorHandler("You are not authorized to mark attendance for this class", 403));
     }
 
-    // Validate subject lock (if provided)
     if (subName && teacher.teachSubject && String(teacher.teachSubject).trim() !== String(subName).trim()) {
       return next(new ErrorHandler("You are not authorized to mark attendance for this subject", 403));
     }
