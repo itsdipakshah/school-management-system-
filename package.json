@@ -1,6 +1,0 @@
-{
-  "dependencies": {
-    "jspdf": "^4.2.1",
-    "lucide": "^1.22.0"
-  }
-}
