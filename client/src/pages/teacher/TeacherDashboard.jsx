@@ -25,6 +25,7 @@ import Events from "./Events";
 import DashboardOverview from "./DashboardOverview";
 import StudentResult from "./StudentResult";
 import Sidebar from "./Sidebar";
+import Assigment from "./Assigment";
 
 const TeacherDashboard = () => {
   const [activeSection, setActiveSection] = useState("dashboard");
@@ -72,6 +73,8 @@ const TeacherDashboard = () => {
         return <DashboardOverview />;
       case "teachers":
         return <AllTeachers />;
+      case "assigments":
+        return <Assigment />;
       case "attendances":
         return <Attendances />;
       case "results":
@@ -93,6 +96,8 @@ const TeacherDashboard = () => {
         return "Dashboard";
       case "teachers":
         return "Teachers";
+      case "assigments":
+        return "Assigments";
       case "notices":
         return "Notices";
       case "events":

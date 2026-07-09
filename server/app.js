@@ -7,6 +7,7 @@ import { errorMiddleware } from './middlewares/error.js';
 import userRoutes from './routers/userRoutes.js';
 import adminRoutes from './routers/adminRoutes.js';
 import attendanceRoutes from './routers/attendanceRoutes.js';
+import assigmentRouters from './routers/assigmentRouters.js';
 import complainRoutes from './routers/complainRoutes.js';
 import eventRoutes from './routers/eventRoutes.js';
 import feeRoutes from './routers/feeRoutes.js';
@@ -52,6 +53,7 @@ app.use("/api/v1/events", eventRoutes);
 app.use("/api/v1/results", resultRoutes);
 app.use("/api/v1/fees", feeRoutes);
 app.use("/api/v1/attendances", attendanceRoutes);
+app.use("/api/v1/assigments", assigmentRouters);
 app.use("/api/v1/complaints", complainRoutes);
 app.use("/api/v1/dashboard", dashboardRoutes);
 

@@ -12,6 +12,7 @@ import {
   ChevronLeft,
   Menu,
   LetterText,
+  BookOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
@@ -24,6 +25,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 const menuItems = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { id: "teachers", label: "All Teachers", icon: Users },
+  { id: "assigments", label: "Assigments", icon: BookOpen },
   { id: "notices", label: "Notices", icon: Bell },
   { id: "events", label: "Events", icon: Calendar },
   { id: "attendances", label: "Attendances", icon: ClipboardCheck },
