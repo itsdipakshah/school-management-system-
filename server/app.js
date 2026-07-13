@@ -27,7 +27,7 @@ const app = express();
 
 
 app.use(cors({
-    origin:[process.env.FRONTEND_URL ||'https://schoolsystemview.netlify.app'],
+    origin:'https://schoolsystemview.netlify.app',
     methods:["GET","POST","PUT","DELETE","PATCH","OPTIONS"],
     credentials:true,
     allowHeaders:["Content-Type","Authorization"]
