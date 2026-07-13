@@ -30,9 +30,10 @@ app.use(express.json());
 app.use(express.urlencoded({extended:true}));
 app.use(cookieParser());
 app.use(cors({
-    origin:process.env.FRONTEND_URL,
+    origin:[process.env.FRONTEND_URL || 'https://schoolsystemview.netlify.app'],
     methods:["GET","POST","PUT","DELETE","PATCH"],
-    credentials:true
+    credentials:true,
+    allowedOrigin:[process.env.FRONTEND_URL || 'https://schoolsystemview.netlify.app']
 }));
 
 app.use(fileUpload({
