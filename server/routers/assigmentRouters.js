@@ -12,11 +12,12 @@ const router = express.Router();
 
 router.use(isAuthenticated);
 
+router.post("/", authorizeRoles("Teacher"), createAssigment);
 router.post("/create", authorizeRoles("Teacher"), createAssigment);
 router.get("/", authorizeRoles("Teacher", "Student"), getAllAssigments);
-router.get("/:id", getAssigmentById);
 router.put("/:id/status", authorizeRoles("Teacher"), updateAssigmentStatus);
+router.put("/:id", authorizeRoles("Teacher"), updateAssigmentStatus);
+router.get("/:id", getAssigmentById);
 router.delete("/:id", authorizeRoles("Teacher"), deleteAssigment);
-
 
 export default router;

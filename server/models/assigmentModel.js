@@ -18,6 +18,16 @@ const assigmentSchema = new mongoose.Schema({
         type:Date,
         required:true,
     },
+    classId:{
+        type:mongoose.Schema.Types.ObjectId,
+        ref:"Sclass",
+        required:true,
+    },
+    subjectId:{
+        type:mongoose.Schema.Types.ObjectId,
+        ref:"Subject",
+        required:true,
+    },
     assignedBy:{
         type:mongoose.Schema.Types.ObjectId,
         ref:"Teacher",

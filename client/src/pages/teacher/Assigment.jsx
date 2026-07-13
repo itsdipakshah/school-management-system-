@@ -4,600 +4,495 @@ import useAuth from "@/hooks/UseAuth";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Eye,
-  Calendar,
-  Search,
-  Sparkles,
-  ClipboardList,
-  User,
-  CalendarClock,
-  AlertTriangle,
-  CheckCircle2,
-  Send,
-  UploadCloud,
-  Plus,
-} from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Plus, Search, Edit, Trash2, MoreHorizontal, RefreshCcw, Calendar, Clock, BookOpen, School, Upload, X, AlertCircle, FileText } from "lucide-react";
+import z from "zod";
 
-const Assigment = () => {
-  const { get, post } = useApi();
+const normalizeText = (value) => String(value ?? "").trim();
+
+const createSchema = z.object({
+  title: z.string().min(3, "Title must be at least 3 characters"),
+  description: z.string().min(1, "Description is required"),
+  assignDate: z.string().min(1, "Assign date is required"),
+  deadline: z.string().min(1, "Deadline date is required"),
+  classId: z.string().min(1, "Please select a target class"),
+  subjectId: z.string().min(1, "Please select a subject"),
+});
+
+const initialFormState = {
+  title: "",
+  description: "",
+  assignDate: new Date().toISOString().split("T")[0],
+  deadline: "",
+  classId: "",
+  subjectId: "",
+  assigneFile: null,
+  filePreviewName: null,
+};
+
+const AssignmentManagement = () => {
+  const { get, post, put, del } = useApi();
   const { user } = useAuth();
-  const isStudent = user?.role === "Student";
-  const isTeacher = user?.role === "Teacher";
+  
+  const [teacherProfile, setTeacherProfile] = useState(null);
+  const [assignments, setAssignments] = useState([]);
+  const [classes, setClasses] = useState([]);
+  const [subjects, setSubjects] = useState([]);
 
-  const [assigments, setAssigments] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState("show-all");
-  const [viewAssigment, setViewAssigment] = useState(null);
-  const [isViewOpen, setIsViewOpen] = useState(false);
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingAssignmentId, setEditingAssignmentId] = useState(null);
+  const [formState, setFormState] = useState(initialFormState);
+  const [submitting, setSubmitting] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  // "Give Assignment" = student submission flow
-  const [giveAssigment, setGiveAssigment] = useState(null);
-  const [isGiveOpen, setIsGiveOpen] = useState(false);
-  const [submissionNote, setSubmissionNote] = useState("");
-  const [submissionFile, setSubmissionFile] = useState(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+//Fetch function haru yaha bata xa 
+  const fetchTeacherProfile = useCallback(async () => {
+    if (!user?.email) return;
+    try {
+      const response = await get("/teachers");
+      const teacherRecords = response?.teachers || response || [];
+      const teacher = teacherRecords.find((item) => {
+        const record = item.teacher || item;
+        return String(record.email || "").toLowerCase() === String(user.email || "").toLowerCase();
+      });
+      setTeacherProfile(teacher?.teacher || teacher || null);
+    } catch (error) {
+      console.error("Error matching teacher profile:", error);
+    }
+  }, [get, user?.email]);
 
-  // "Create Assignment" = teacher creation flow
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [createForm, setCreateForm] = useState({
-    title: "",
-    description: "",
-    assignDate: "",
-    deadline: "",
-  });
-  const [createFile, setCreateFile] = useState(null);
-  const [isCreating, setIsCreating] = useState(false);
+  const fetchClasses = useCallback(async () => {
+    try {
+      const response = await get("/classes/all");
+      const classRecords = response?.classes || response || [];
+      setClasses(Array.isArray(classRecords) ? classRecords : []);
+    } catch (error) {
+      console.error(error);
+    }
+  }, [get]);
 
-  const fetchAssigments = useCallback(async () => {
+  const fetchSubjects = useCallback(async () => {
+    try {
+      const response = await get("/subjects");
+      const subjectRecords = response?.subjects || response || [];
+      setSubjects(Array.isArray(subjectRecords) ? subjectRecords : []);
+    } catch (error) {
+      console.error(error);
+    }
+  }, [get]);
+
+  const fetchAssignments = useCallback(async () => {
     try {
       const response = await get("/assigments");
-      if (response?.success && Array.isArray(response.assigments)) {
-        setAssigments(response.assigments);
-      } else if (Array.isArray(response)) {
-        setAssigments(response);
-      } else {
-        toast.error("Unexpected assignments response from backend");
-      }
+      const list = response?.assigments || response || [];
+      setAssignments(Array.isArray(list) ? list : []);
     } catch (error) {
       console.error(error);
       toast.error("Failed to load assignments");
     }
   }, [get]);
+//sab lia call gare yo useEffect ma 
+  useEffect(() => {
+    fetchTeacherProfile();
+    fetchClasses();
+    fetchSubjects();
+    fetchAssignments();
+  }, [fetchTeacherProfile, fetchClasses, fetchSubjects, fetchAssignments]);
+
+  const selectedClass = useMemo(() => {
+    return classes.find((c) => String(c._id || c.id) === String(formState.classId));
+  }, [classes, formState.classId]);
+
+  const selectedClassName = selectedClass
+    ? String(selectedClass.sclassName || selectedClass.className || selectedClass.name || "").trim()
+    : "";
+
+  const teacherSubjectName = String(teacherProfile?.teachSubject || "").trim();
+
+  //teacher subject lai match garna ko lagi yo useMemo use gareko ho
+  const teacherSubjectDoc = useMemo(() => {
+    if (!teacherProfile || !subjects.length || !teacherSubjectName) return null;
+    const teacherId = String(teacherProfile._id || teacherProfile.id || "").trim();
+    const normalizedName = teacherSubjectName.toLowerCase();
+    const normalizedClassName = selectedClassName.toLowerCase();
+
+    const exactMatch = subjects.find((subject) => {
+      const subjectName = String(subject.subjectName || subject.name || "").trim().toLowerCase();
+      const subjectTeacherId = String(subject.teacher?._id || subject.teacher || "").trim();
+      const subjectClassName = String(
+        subject.sclass?.sclassName || subject.sclass?.className || subject.sclass?.name || "",
+      ).trim().toLowerCase();
+      
+      return (
+        subjectName === normalizedName &&
+        subjectTeacherId === teacherId &&
+        (!normalizedClassName || subjectClassName === normalizedClassName)
+      );
+    });
+
+    if (exactMatch) return exactMatch;
+
+    return subjects.find((subject) => {
+      const subjectName = String(subject.subjectName || subject.name || "").trim().toLowerCase();
+      const subjectTeacherId = String(subject.teacher?._id || subject.teacher || "").trim();
+      return subjectName === normalizedName && subjectTeacherId === teacherId;
+    });
+  }, [subjects, teacherProfile, teacherSubjectName, selectedClassName]);
+
+  const selectedSubjectId = String(teacherSubjectDoc?._id || teacherSubjectDoc?.id || "").trim();
+
+  // Auto-fill target selections down matching lines
+  useEffect(() => {
+    if (!formState.classId && teacherProfile && classes.length) {
+      const defaultClass = classes.find(
+        (cls) =>
+          String(cls.sclassName || cls.className || cls.name || "").trim() ===
+          String(teacherProfile.teachSclass || "").trim(),
+      );
+      if (defaultClass) {
+        setFormState((prev) => ({ ...prev, classId: String(defaultClass._id || defaultClass.id) }));
+      }
+    }
+  }, [classes, formState.classId, teacherProfile]);
 
   useEffect(() => {
-    fetchAssigments();
-  }, [fetchAssigments]);
+    if (selectedSubjectId && formState.subjectId !== selectedSubjectId) {
+      setFormState((prev) => ({ ...prev, subjectId: selectedSubjectId }));
+    }
+  }, [selectedSubjectId, formState.subjectId]);
 
-  // Deadline status is derived on the fly since the backend has no status field
+  const handleInputChange = (field, value) => {
+    setFormState((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleFileChange = (event) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error("File size must be less than 10MB");
+        return;
+      }
+      setFormState((prev) => ({
+        ...prev,
+        assigneFile: file,
+        filePreviewName: file.name,
+      }));
+    }
+  };
+
+  const openCreateDialog = () => {
+    setFormState({
+      ...initialFormState,
+      subjectId: selectedSubjectId,
+    });
+    setIsEditMode(false);
+    setEditingAssignmentId(null);
+    setIsDialogOpen(true);
+  };
+
+  const handleEdit = (assignment) => {
+    setFormState({
+      title: assignment.title || "",
+      description: assignment.description || "",
+      assignDate: assignment.assignDate ? new Date(assignment.assignDate).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+      deadline: assignment.deadline ? new Date(assignment.deadline).toISOString().split("T")[0] : "",
+      classId: assignment.classId?._id || assignment.classId || "",
+      subjectId: assignment.subjectId?._id || assignment.subjectId || "",
+      assigneFile: null,
+      filePreviewName: assignment.assigneFile ? "Current Attachment File" : null,
+    });
+    setEditingAssignmentId(assignment._id || assignment.id);
+    setIsEditMode(true);
+    setIsDialogOpen(true);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const validation = createSchema.safeParse(formState);
+    if (!validation.success) {
+      toast.error(validation.error.errors[0].message);
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      const formData = new FormData();
+      formData.append("title", formState.title);
+      formData.append("description", formState.description);
+      formData.append("assignDate", formState.assignDate);
+      formData.append("deadline", formState.deadline);
+      formData.append("classId", formState.classId);
+      formData.append("subjectId", formState.subjectId);
+
+      if (formState.assigneFile) {
+        formData.append("assigneFile", formState.assigneFile);
+      }
+
+      let response;
+      if (isEditMode && editingAssignmentId) {
+        response = await put(`/assigments/${editingAssignmentId}`, formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+      } else {
+        response = await post("/assigments", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+      }
+
+      if (response?.success !== false) {
+        toast.success(isEditMode ? "Assignment updated successfully" : "Assignment created successfully");
+        setIsDialogOpen(false);
+        setFormState(initialFormState);
+        await fetchAssignments();
+      } else {
+        toast.error(response?.message || "Action execution failed");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Operation encountered an error");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (assignmentId) => {
+    if (!window.confirm("Are you sure you want to delete this assignment?")) return;
+    try {
+      const response = await del(`/assigments/${assignmentId}`);
+      if (response?.success !== false) {
+        toast.success("Assignment deleted cleanly");
+        await fetchAssignments();
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to delete item");
+    }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([fetchClasses(), fetchSubjects(), fetchTeacherProfile(), fetchAssignments()]);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   const getDeadlineStatus = (deadline) => {
     if (!deadline) return "unknown";
     const now = new Date();
     const due = new Date(deadline);
     const diffDays = (due - now) / (1000 * 60 * 60 * 24);
-
     if (diffDays < 0) return "overdue";
     if (diffDays <= 2) return "due-soon";
     return "upcoming";
   };
 
-  const filteredAssigments = useMemo(() => {
-    const lowerSearch = searchTerm.toLowerCase().trim();
-
-    return assigments.filter((assigment) => {
-      const status = getDeadlineStatus(assigment.deadline);
-
-      if (filterStatus !== "show-all" && status !== filterStatus) {
-        return false;
-      }
-
+  const filteredAssignments = useMemo(() => {
+    const lower = (searchTerm || "").toLowerCase().trim();
+    return assignments.filter((item) => {
+      const status = getDeadlineStatus(item.deadline);
+      const classLabel = normalizeText(item?.classId?.sclassName || item?.classId?.className || item?.classId?.name || "");
+      const subjectLabel = normalizeText(item?.subjectId?.subjectName || item?.subjectId?.name || "");
+      
       const matchesSearch =
-        !lowerSearch ||
-        assigment.title?.toLowerCase().includes(lowerSearch) ||
-        assigment.description?.toLowerCase().includes(lowerSearch) ||
-        assigment.assignedBy?.name?.toLowerCase().includes(lowerSearch);
+        (item.title || "").toLowerCase().includes(lower) ||
+        (item.description || "").toLowerCase().includes(lower) ||
+        classLabel.toLowerCase().includes(lower) ||
+        subjectLabel.toLowerCase().includes(lower);
 
-      return matchesSearch;
+      const matchesStatus = filterStatus === "all" || status === filterStatus;
+      return matchesSearch && matchesStatus;
     });
-  }, [assigments, searchTerm, filterStatus]);
-
-  const handleView = (assigment) => {
-    setViewAssigment(assigment);
-    setIsViewOpen(true);
-  };
-
-  const handleOpenGive = (assigment) => {
-    setGiveAssigment(assigment);
-    setSubmissionNote("");
-    setSubmissionFile(null);
-    setIsGiveOpen(true);
-  };
-
-  const handleSubmitAssigment = async (e) => {
-    e.preventDefault();
-    if (!giveAssigment) return;
-
-    try {
-      setIsSubmitting(true);
-
-      const formData = new FormData();
-      formData.append("note", submissionNote);
-      if (submissionFile) {
-        formData.append("submissionFile", submissionFile);
-      }
-
-      // NOTE: the controller you shared doesn't include a submission route
-      // yet — this posts to /assigments/:id/submit as a placeholder.
-      // Add a matching endpoint (e.g. submitAssigment) on the backend that
-      // records the student's submission against this assignment.
-      const response = await post(`/assigments/${giveAssigment._id}/submit`, formData);
-
-      if (response?.success === false) {
-        toast.error(response?.message || "Failed to submit assignment");
-        return;
-      }
-
-      toast.success("Assignment submitted successfully");
-      setIsGiveOpen(false);
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to submit assignment");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleOpenCreate = () => {
-    setCreateForm({ title: "", description: "", assignDate: "", deadline: "" });
-    setCreateFile(null);
-    setIsCreateOpen(true);
-  };
-
-  const handleCreateFormChange = (field, value) => {
-    setCreateForm((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleCreateAssigment = async (e) => {
-    e.preventDefault();
-
-    const { title, description, assignDate, deadline } = createForm;
-    if (!title || !description || !assignDate || !deadline) {
-      toast.error("Please fill in all required fields");
-      return;
-    }
-
-    try {
-      setIsCreating(true);
-
-      const formData = new FormData();
-      formData.append("title", title);
-      formData.append("description", description);
-      formData.append("assignDate", assignDate);
-      formData.append("deadline", deadline);
-      if (createFile) {
-        // matches req.files.assigneFile expected by the createAssigment controller
-        formData.append("assigneFile", createFile);
-      }
-
-      const response = await post("/assigments", formData);
-
-      if (response?.success === false) {
-        toast.error(response?.message || "Failed to create assignment");
-        return;
-      }
-
-      toast.success("Assignment created successfully");
-      setIsCreateOpen(false);
-      fetchAssigments();
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to create assignment");
-    } finally {
-      setIsCreating(false);
-    }
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return "N/A";
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
-
-  const getStatusStyles = (status) => {
-    switch (status) {
-      case "overdue":
-        return "bg-red-500/10 text-red-600 border-red-500/20 hover:bg-red-500/10";
-      case "due-soon":
-        return "bg-amber-500/10 text-amber-600 border-amber-500/20 hover:bg-amber-500/10";
-      case "upcoming":
-        return "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 hover:bg-emerald-500/10";
-      default:
-        return "bg-blue-500/10 text-blue-600 border-blue-500/20 hover:bg-blue-500/10";
-    }
-  };
-
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case "overdue":
-        return <AlertTriangle className="h-3.5 w-3.5 mr-1 inline" />;
-      case "due-soon":
-        return <CalendarClock className="h-3.5 w-3.5 mr-1 inline" />;
-      case "upcoming":
-        return <CheckCircle2 className="h-3.5 w-3.5 mr-1 inline" />;
-      default:
-        return <ClipboardList className="h-3.5 w-3.5 mr-1 inline" />;
-    }
-  };
-
-  const getStatusLabel = (status) => {
-    switch (status) {
-      case "overdue":
-        return "Overdue";
-      case "due-soon":
-        return "Due Soon";
-      case "upcoming":
-        return "Upcoming";
-      default:
-        return "Unknown";
-    }
-  };
+  }, [assignments, searchTerm, filterStatus]);
 
   return (
     <div className="pl-16 pr-4 py-6">
-      <div className="mb-6 flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-foreground">Assignments</h2>
-          <p className="text-muted-foreground">
-            Track assigned work, deadlines, and submission files.
-          </p>
+          <h2 className="text-2xl font-bold text-foreground">Assignments Management</h2>
+          <p className="text-muted-foreground">Manage homework and coursework tasks for assigned classrooms</p>
         </div>
-        <div className="flex items-center gap-3 self-start sm:self-center">
-          <div className="text-sm font-medium bg-muted px-3 py-1.5 rounded-md">
-            Showing {filteredAssigments.length} Assignments
-          </div>
-          {isTeacher && (
-            <Button onClick={handleOpenCreate} className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Create Assignment
-            </Button>
-          )}
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing}>
+            <RefreshCcw className={`w-4 h-4 mr-2 ${refreshing ? "animate-spin" : ""}`} /> Refresh Items
+          </Button>
+          <Button onClick={openCreateDialog} className="gap-2">
+            <Plus className="w-4 h-4" /> Add Assignment
+          </Button>
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3 mb-6 w-full">
-        <div className="relative flex-1 w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search assignments by title, keywords, or teacher..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9 w-full"
-          />
-        </div>
-
-        <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="w-full sm:w-[180px] shrink-0">
-            <SelectValue placeholder="Deadline Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="show-all">All Assignments</SelectItem>
-            <SelectItem value="upcoming">Upcoming</SelectItem>
-            <SelectItem value="due-soon">Due Soon</SelectItem>
-            <SelectItem value="overdue">Overdue</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredAssigments.length === 0 ? (
-          <div className="col-span-full text-center py-12 border rounded-xl bg-muted/20 text-muted-foreground">
-            <Sparkles className="h-8 w-8 mx-auto mb-2 opacity-40" />
-            <p>No assignments found matching your criteria.</p>
+      <Card className="bg-card border-border mt-6">
+        <CardContent className="pt-6">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search assignments..."
+                className="pl-10 bg-background border-border"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="sm:w-45 bg-background border-border">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Timelines</SelectItem>
+                <SelectItem value="upcoming">Upcoming Tasks</SelectItem>
+                <SelectItem value="due-soon">Due Within 48 Hrs</SelectItem>
+                <SelectItem value="overdue">Overdue Deadlines</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-        ) : (
-          filteredAssigments.map((assigment) => {
-            const status = getDeadlineStatus(assigment.deadline);
-            return (
-              <Card
-                key={assigment._id}
-                className="flex flex-col justify-between shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden"
-              >
-                <div>
-                  {assigment.assigneFile?.url ? (
-                    <div className="h-40 w-full relative overflow-hidden bg-muted border-b">
-                      <img
-                        src={assigment.assigneFile.url}
-                        alt={assigment.title}
-                        className="object-cover w-full h-full hover:scale-105 transition-transform duration-300"
-                      />
-                    </div>
-                  ) : (
-                    <div className="h-2 bg-primary/20 w-full" />
-                  )}
+        </CardContent>
+      </Card>
 
-                  <CardHeader className="space-y-2">
-                    <div className="flex items-center justify-between gap-2 flex-wrap">
-                      <Badge variant="outline" className={getStatusStyles(status)}>
-                        {getStatusIcon(status)}
-                        {getStatusLabel(status)}
-                      </Badge>
-                      <div className="flex items-center text-xs text-muted-foreground gap-1">
-                        <Calendar className="h-3.5 w-3.5" />
-                        <span>Due {formatDate(assigment.deadline)}</span>
-                      </div>
-                    </div>
-                    <CardTitle className="text-xl font-bold line-clamp-1 leading-snug">
-                      {assigment.title}
-                    </CardTitle>
-                  </CardHeader>
-
-                  <CardContent className="pb-4 space-y-3">
-                    <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed">
-                      {assigment.description}
-                    </p>
-
-                    <div className="flex flex-col gap-1.5 pt-1 text-xs text-muted-foreground border-t border-dashed mt-2">
-                      {assigment.assignedBy?.name && (
-                        <div className="flex items-center gap-1.5">
-                          <User className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
-                          <span className="truncate">
-                            Assigned by {assigment.assignedBy.name}
-                          </span>
-                        </div>
-                      )}
-                      <div className="flex items-center gap-1.5">
-                        <Calendar className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
-                        <span>Assigned {formatDate(assigment.assignDate)}</span>
-                      </div>
-                    </div>
-                  </CardContent>
+      {/* Render Assignments Cards Grid Layout */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mt-6">
+        {filteredAssignments.map((assignment) => {
+          const status = getDeadlineStatus(assignment.deadline);
+          return (
+            <Card key={assignment._id || assignment.id} className="bg-card border-border relative overflow-hidden">
+              <CardHeader className="pb-3">
+                <div className="flex justify-between items-start gap-2">
+                  <CardTitle className="text-lg font-semibold line-clamp-1">{assignment.title}</CardTitle>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleEdit(assignment)}>
+                        <Edit className="w-4 h-4 mr-2" /> Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(assignment._id || assignment.id)}>
+                        <Trash2 className="w-4 h-4 mr-2" /> Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
-
-                <CardContent className="pt-0 border-t mt-auto py-3 bg-muted/10 flex flex-col gap-2">
-                  <Button
-                    className="w-full flex items-center justify-center gap-2"
-                    variant="outline"
-                    onClick={() => handleView(assigment)}
-                  >
-                    <Eye className="h-4 w-4" />
-                    View Assignment Details
-                  </Button>
-                  {isStudent && (
-                    <Button
-                      className="w-full flex items-center justify-center gap-2"
-                      onClick={() => handleOpenGive(assigment)}
-                    >
-                      <Send className="h-4 w-4" />
-                      Give Assignment
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })
-        )}
-      </div>
-
-      <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
-        <DialogContent className="sm:max-w-[550px] overflow-y-auto max-h-[90vh]">
-          {viewAssigment && (
-            <>
-              <DialogHeader className="space-y-3 text-left">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Badge
-                    variant="outline"
-                    className={getStatusStyles(getDeadlineStatus(viewAssigment.deadline))}
-                  >
-                    {getStatusIcon(getDeadlineStatus(viewAssigment.deadline))}
-                    Status: {getStatusLabel(getDeadlineStatus(viewAssigment.deadline))}
+                <div className="flex gap-2 mt-1 flex-wrap">
+                  <Badge variant="secondary">
+                    <School className="w-3 h-3 mr-1" />
+                    {assignment.classId?.sclassName || assignment.classId?.className || assignment.classId?.name || "Unknown Class"}
                   </Badge>
-                  <div className="flex items-center text-xs text-muted-foreground gap-1 ml-auto">
-                    <Calendar className="h-3.5 w-3.5" />
-                    <span>Deadline: {formatDate(viewAssigment.deadline)}</span>
-                  </div>
+                  <Badge variant="outline">
+                    <BookOpen className="w-3 h-3 mr-1" />
+                    {assignment.subjectId?.subjectName || assignment.subjectId?.name || "Unknown Subject"}
+                  </Badge>
                 </div>
-                <DialogTitle className="text-2xl font-bold tracking-tight text-foreground">
-                  {viewAssigment.title}
-                </DialogTitle>
-              </DialogHeader>
-
-              {viewAssigment.assigneFile?.url && (
-                <div className="my-2 rounded-lg overflow-hidden border bg-muted max-h-64 flex justify-center">
-                  <img
-                    src={viewAssigment.assigneFile.url}
-                    alt={viewAssigment.title}
-                    className="object-contain max-h-64 w-full bg-black/5"
-                  />
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm text-muted-foreground">
+                <p className="line-clamp-2 min-h-[40px]">{assignment.description}</p>
+                <div className="flex justify-between text-xs pt-2 border-t border-border">
+                  <span className="flex items-center"><Calendar className="w-3 h-3 mr-1" /> {assignment.assignDate ? new Date(assignment.assignDate).toLocaleDateString() : "-"}</span>
+                  <span className={`flex items-center font-medium ${status === "overdue" ? "text-destructive" : status === "due-soon" ? "text-amber-500" : "text-emerald-500"}`}>
+                    <Clock className="w-3 h-3 mr-1" /> Due: {assignment.deadline ? new Date(assignment.deadline).toLocaleDateString() : "-"}
+                  </span>
                 </div>
-              )}
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
 
-              <div className="space-y-4 pt-2">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-muted/30 p-3 rounded-lg border text-sm">
-                  {viewAssigment.assignedBy?.name && (
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <User className="h-4 w-4 text-primary shrink-0" />
-                      <div>
-                        <span className="font-medium text-foreground block text-xs">
-                          Assigned By
-                        </span>
-                        {viewAssigment.assignedBy.name}
-                      </div>
-                    </div>
-                  )}
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Calendar className="h-4 w-4 text-primary shrink-0" />
-                    <div>
-                      <span className="font-medium text-foreground block text-xs">
-                        Assign Date
-                      </span>
-                      {formatDate(viewAssigment.assignDate)}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="text-sm leading-relaxed text-slate-600 dark:text-slate-300 whitespace-pre-wrap bg-muted/10 p-4 rounded-lg border">
-                  {viewAssigment.description}
-                </div>
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isGiveOpen} onOpenChange={setIsGiveOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          {giveAssigment && (
-            <>
-              <DialogHeader className="space-y-1 text-left">
-                <DialogTitle className="text-xl font-bold tracking-tight text-foreground">
-                  Give Assignment
-                </DialogTitle>
-                <p className="text-sm text-muted-foreground">
-                  Submitting for{" "}
-                  <span className="font-medium text-foreground">
-                    {giveAssigment.title}
-                  </span>{" "}
-                  · Due {formatDate(giveAssigment.deadline)}
-                </p>
-              </DialogHeader>
-
-              <form onSubmit={handleSubmitAssigment} className="space-y-4 pt-2">
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-foreground">
-                    Note (optional)
-                  </label>
-                  <Textarea
-                    placeholder="Add a note for your teacher..."
-                    value={submissionNote}
-                    onChange={(e) => setSubmissionNote(e.target.value)}
-                    rows={4}
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-foreground">
-                    Attach your work
-                  </label>
-                  <label
-                    htmlFor="submission-file"
-                    className="flex items-center gap-2 border border-dashed rounded-lg px-3 py-2.5 text-sm text-muted-foreground cursor-pointer hover:bg-muted/40 transition-colors"
-                  >
-                    <UploadCloud className="h-4 w-4 shrink-0" />
-                    {submissionFile ? submissionFile.name : "Choose a file to upload"}
-                  </label>
-                  <input
-                    id="submission-file"
-                    type="file"
-                    className="hidden"
-                    onChange={(e) => setSubmissionFile(e.target.files?.[0] || null)}
-                  />
-                </div>
-
-                <Button
-                  type="submit"
-                  className="w-full flex items-center justify-center gap-2"
-                  disabled={isSubmitting}
-                >
-                  <Send className="h-4 w-4" />
-                  {isSubmitting ? "Submitting..." : "Submit Assignment"}
-                </Button>
-              </form>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-        <DialogContent className="sm:max-w-[550px] overflow-y-auto max-h-[90vh]">
-          <DialogHeader className="space-y-1 text-left">
-            <DialogTitle className="text-xl font-bold tracking-tight text-foreground">
-              Create Assignment
-            </DialogTitle>
-            <p className="text-sm text-muted-foreground">
-              Post a new assignment for your students.
-            </p>
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-md bg-card border-border max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{isEditMode ? "Edit Assignment Parameters" : "Create New Student Task"}</DialogTitle>
+            <DialogDescription>Deploy tasks aligned with your subject assignment allocation.</DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleCreateAssigment} className="space-y-4 pt-2">
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground">Title</label>
-              <Input
-                placeholder="e.g. Chapter 4 Problem Set"
-                value={createForm.title}
-                onChange={(e) => handleCreateFormChange("title", e.target.value)}
-              />
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="classId">Target Class</Label>
+              <Select value={formState.classId} onValueChange={(val) => handleInputChange("classId", val)}>
+                <SelectTrigger id="classId">
+                  <SelectValue placeholder="Choose Target Class" />
+                </SelectTrigger>
+                <SelectContent>
+                  {classes.map((cls) => (
+                    <SelectItem key={cls._id || cls.id} value={cls._id || cls.id}>
+                      {cls.sclassName || cls.className || cls.name} {cls.section ? `(${cls.section})` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground">Description</label>
-              <Textarea
-                placeholder="Describe what students need to do..."
-                value={createForm.description}
-                onChange={(e) => handleCreateFormChange("description", e.target.value)}
-                rows={4}
-              />
+            <div className="space-y-2">
+              <Label htmlFor="subjectId">Subject Context (Auto-Resolved)</Label>
+              <Select value={formState.subjectId} disabled={true}>
+                <SelectTrigger id="subjectId" className="bg-muted opacity-80 cursor-not-allowed">
+                  <SelectValue placeholder={teacherSubjectDoc ? (teacherSubjectDoc.subjectName || teacherSubjectDoc.name) : "No Subject Resolved"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {teacherSubjectDoc && (
+                    <SelectItem value={teacherSubjectDoc._id || teacherSubjectDoc.id}>
+                      {teacherSubjectDoc.subjectName || teacherSubjectDoc.name}
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-foreground">Assign Date</label>
-                <Input
-                  type="date"
-                  value={createForm.assignDate}
-                  onChange={(e) => handleCreateFormChange("assignDate", e.target.value)}
-                />
+            <div className="space-y-2">
+              <Label htmlFor="title">Task Title</Label>
+              <Input id="title" value={formState.title} onChange={(e) => handleInputChange("title", e.target.value)} placeholder="e.g., Chapter 3 Problem Set" />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="description">Instructions</Label>
+              <Textarea id="description" value={formState.description} onChange={(e) => handleInputChange("description", e.target.value)} placeholder="Provide assignment criteria details..." />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="assignDate">Assign Date</Label>
+                <Input type="date" id="assignDate" value={formState.assignDate} onChange={(e) => handleInputChange("assignDate", e.target.value)} />
               </div>
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-foreground">Deadline</label>
-                <Input
-                  type="date"
-                  value={createForm.deadline}
-                  onChange={(e) => handleCreateFormChange("deadline", e.target.value)}
-                />
+              <div className="space-y-2">
+                <Label htmlFor="deadline">Due Date</Label>
+                <Input type="date" id="deadline" value={formState.deadline} onChange={(e) => handleInputChange("deadline", e.target.value)} />
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground">
-                Attachment (optional)
-              </label>
-              <label
-                htmlFor="create-assigment-file"
-                className="flex items-center gap-2 border border-dashed rounded-lg px-3 py-2.5 text-sm text-muted-foreground cursor-pointer hover:bg-muted/40 transition-colors"
-              >
-                <UploadCloud className="h-4 w-4 shrink-0" />
-                {createFile ? createFile.name : "Choose a file to attach"}
-              </label>
-              <input
-                id="create-assigment-file"
-                type="file"
-                className="hidden"
-                onChange={(e) => setCreateFile(e.target.files?.[0] || null)}
-              />
+            <div className="space-y-2">
+              <Label htmlFor="file-upload">Reference Material Attachment (Optional)</Label>
+              <div className="flex items-center gap-2">
+                <Input id="file-upload" type="file" className="hidden" onChange={handleFileChange} accept=".pdf,.doc,.docx,.jpg,.png" />
+                <Button type="button" variant="outline" className="w-full gap-2" onClick={() => document.getElementById("file-upload").click()}>
+                  <Upload className="w-4 h-4" /> {formState.filePreviewName ? "Change File" : "Upload Document"}
+                </Button>
+              </div>
+              {formState.filePreviewName && (
+                <div className="flex items-center justify-between bg-muted text-xs p-2 rounded border border-border mt-1">
+                  <span className="flex items-center gap-1 line-clamp-1"><FileText className="w-3.5 h-3.5" /> {formState.filePreviewName}</span>
+                  <Button type="button" variant="ghost" size="sm" className="h-5 w-5 p-0" onClick={() => setFormState(p => ({ ...p, assigneFile: null, filePreviewName: null }))}>
+                    <X className="w-3 h-3" />
+                  </Button>
+                </div>
+              )}
             </div>
 
-            <Button
-              type="submit"
-              className="w-full flex items-center justify-center gap-2"
-              disabled={isCreating}
-            >
-              <Plus className="h-4 w-4" />
-              {isCreating ? "Creating..." : "Create Assignment"}
-            </Button>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+              <Button type="submit" disabled={submitting}>{submitting ? "Saving..." : "Save Assignment"}</Button>
+            </div>
           </form>
         </DialogContent>
       </Dialog>
@@ -605,4 +500,4 @@ const Assigment = () => {
   );
 };
 
-export default Assigment;
+export default AssignmentManagement;
