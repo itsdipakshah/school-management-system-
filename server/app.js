@@ -25,16 +25,17 @@ import fileUpload from 'express-fileupload';
 const app = express();
 configDotenv();
 
+app.use(cors({
+    origin:[process.env.FRONTEND_URL ||'https://schoolsystemview.netlify.app'],
+    methods:["GET","POST","PUT","DELETE","PATCH"],
+    credentials:true,
+    allowHeaders:["Content-Type","Authorization","Access-Control-Allow-Origin","Access-Control-Allow-Headers"]
+}));
+
 //middlewares
 app.use(express.json());
 app.use(express.urlencoded({extended:true}));
 app.use(cookieParser());
-app.use(cors({
-    origin:[process.env.FRONTEND_URL || 'https://schoolsystemview.netlify.app'],
-    methods:["GET","POST","PUT","DELETE","PATCH"],
-    credentials:true,
-    allowedOrigin:[process.env.FRONTEND_URL || 'https://schoolsystemview.netlify.app']
-}));
 
 app.use(fileUpload({
     useTempFiles: true,
