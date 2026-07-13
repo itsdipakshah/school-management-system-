@@ -1,6 +1,7 @@
 import express from 'express';
+import { configDotenv } from 'dotenv';  
+configDotenv();
 import cors from 'cors';
-import { configDotenv } from 'dotenv';
 import dbConnection from './database/dbConnection.js';
 import cookieParser from 'cookie-parser';
 import { errorMiddleware } from './middlewares/error.js';
@@ -23,13 +24,13 @@ import fileUpload from 'express-fileupload';
 
 
 const app = express();
-configDotenv();
+
 
 app.use(cors({
     origin:[process.env.FRONTEND_URL ||'https://schoolsystemview.netlify.app'],
     methods:["GET","POST","PUT","DELETE","PATCH"],
     credentials:true,
-    allowHeaders:["Content-Type","Authorization","Access-Control-Allow-Origin","Access-Control-Allow-Headers"]
+    allowHeaders:["Content-Type","Authorization"]
 }));
 
 //middlewares
