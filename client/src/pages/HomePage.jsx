@@ -29,7 +29,7 @@ const HomePage = () => {
 
             <div className="flex flex-col gap-4 sm:flex-row">
 
-              <InteractiveHoverButton  asChild className="min-w-[150px] bg-blue-500 text-white hover:bg-blue-600 focus:ring-blue-300 disabled:bg-gray-400 justify-center">
+              <InteractiveHoverButton  asChild className="min-w-[150px] bg-blue-500 text-white hover:bg-blue-600 focus:ring-blue-300 disabled:bg-gray-400 justify-center cursor-pointer">
                <Link to="/login">Login</Link>
               </InteractiveHoverButton>
                <InteractiveHoverButton asChild 
@@ -51,7 +51,7 @@ const HomePage = () => {
                 <h2 className="mt-4 text-2xl font-bold">
                   Fast setup, easy access
                 </h2>
-                <p className="mt-3 text-sm leading-6 text-slate-600">
+                <p className="mt-3 text-lg leading-6 text-slate-600">
                   Log in or register to start managing your classroom, students,
                   and school operations from a single place.
                 </p>
@@ -59,35 +59,35 @@ const HomePage = () => {
 
               <div className="grid gap-4 sm:grid-cols-2 ">
                 <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5 transition hover:border-blue-300">
-                  <p className="text-sm font-semibold text-slate-900">
-                    Attendance
+                  <p className="text-lg font-semibold text-slate-900">
+                    1.Attendance
                   </p>
-                  <p className="mt-3 text-sm leading-6 text-slate-600">
+                  <p className="mt-3 text-md leading-6 text-slate-600">
                     Track student attendance and teacher schedules with one
                     click.
                   </p>
                 </div>
                 <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5 transition hover:border-blue-300">
-                  <p className="text-sm font-semibold text-slate-900">
-                    Results
+                  <p className="text-lg font-semibold text-slate-900">
+                    2.Results
                   </p>
-                  <p className="mt-3 text-sm leading-6 text-slate-600">
+                  <p className="mt-3 text-md leading-6 text-slate-600">
                     Publish grades and progress reports for students and parents
                     instantly.
                   </p>
                 </div>
                 <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5 transition hover:border-blue-300">
-                  <p className="text-sm font-semibold text-slate-900">Fees</p>
-                  <p className="mt-3 text-sm leading-6 text-slate-600">
+                  <p className="text-lg font-semibold text-slate-900">3.Fees</p>
+                  <p className="mt-3 text-md leading-6 text-slate-600">
                     Simplify fee management with clear records and payment
                     status for every student.
                   </p>
                 </div>
                 <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5 transition hover:border-blue-300">
-                  <p className="text-sm font-semibold text-slate-900">
-                    Notices
+                  <p className="text-lg font-semibold text-slate-900">
+                    4.Notices
                   </p>
-                  <p className="mt-3 text-sm leading-6 text-slate-600">
+                  <p className="mt-3 text-md leading-6 text-slate-600">
                     Share announcements, homework, and school news across all
                     roles immediately.
                   </p>

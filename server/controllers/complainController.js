@@ -53,3 +53,17 @@ export const updateComplaintStatus = asyncHandler(async (req, res, next) => {
 
   res.status(200).json({ success: true, complaint });
 });
+
+export const deleteComplaint = asyncHandler(async (req, res, next) => {
+  const complaint = await Complain.findById(req.params.id);
+  if (!complaint) {
+    return next(new ErrorHandler("Complaint not found", 404));
+  }
+
+  if (req.user.role !== "Admin" && complaint.user._id.toString() !== req.user._id.toString()) {
+    return next(new ErrorHandler("Access denied", 403));
+  }
+
+  await complaint.remove();
+  res.status(200).json({ success: true, message: "Complaint deleted successfully" });
+});

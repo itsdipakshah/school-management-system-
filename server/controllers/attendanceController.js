@@ -16,8 +16,6 @@ export const markStudentAttendance = asyncHandler(async (req, res, next) => {
     return next(new ErrorHandler("Student not found", 404));
   }
 
-  // If request is from a Teacher, validate that teacher is allowed to mark
-  // attendance for this class and subject. Also attach teacher id to record.
   let teacherIdToAttach = null;
   if (req.user?.role === "Teacher") {
     const teacher = await Teacher.findOne({ user: req.user._id });
@@ -56,7 +54,6 @@ export const markStudentAttendance = asyncHandler(async (req, res, next) => {
     subName: subName || "",
   });
 
-  // Also append to student.attendance subdocument for quick lookup
   try {
     studentExists.attendance = studentExists.attendance || [];
     studentExists.attendance.push({
@@ -66,7 +63,6 @@ export const markStudentAttendance = asyncHandler(async (req, res, next) => {
     });
     await studentExists.save();
   } catch (err) {
-    // don't fail the request if student save fails; log and continue
     console.error("Failed to push attendance to student record:", err);
   }
 

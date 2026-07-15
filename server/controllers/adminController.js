@@ -19,24 +19,18 @@ import cloudinary from 'cloudinary';
 export const adminRegister = asyncHandler(async (req, res, next) => {
     const { firstName, lastName, email, password, phone, schoolName, street, city, state, zip, avatar } = req.body;
 
-    // Validate required fields
     if (!firstName || !lastName || !email || !password || !phone || !schoolName) {
         return next(new ErrorHandler("Please fill all required fields", 400));
     }
 
-    // Check if user already exists
     let user = await User.findOne({ email });
     if (user) {
         return next(new ErrorHandler("Email already registered", 400));
     }
-
-    // Check if admin with same email already exists
     let adminExists = await Admin.findOne({ email });
     if (adminExists) {
         return next(new ErrorHandler("Admin with this email already exists", 400));
     }
-
-    // Create User record with Admin role
     user = new User({
         name: `${firstName} ${lastName}`,
         email,
@@ -45,7 +39,7 @@ export const adminRegister = asyncHandler(async (req, res, next) => {
     });
     await user.save();
 
-    // Upload avatar if present
+
     const adminAvatarFile = req.files?.adminAvatar || req.files?.avatar;
     let avatarData = {
         public_id: "default",
@@ -68,7 +62,6 @@ export const adminRegister = asyncHandler(async (req, res, next) => {
         };
     }
 
-    // Create Admin profile
     const adminProfile = new Admin({
         user: user._id,
         firstName,
@@ -119,7 +112,7 @@ export const updateAdmin = asyncHandler(async (req, res, next) => {
     const { id } = req.params;
     const { firstName, lastName, phone, street, city, state, zip, email } = req.body;
 
-    // Check if admin exists
+
     let admin = await Admin.findById(id);
     if (!admin) {
         return next(new ErrorHandler("Admin not found", 404));
@@ -129,18 +122,15 @@ export const updateAdmin = asyncHandler(async (req, res, next) => {
     if (req.user.role !== 'Admin') {
         return next(new ErrorHandler("Access denied. Only admins can update admin profiles.", 403));
     }
-
-    // Check if new email is already taken (if email is being changed)
     if (email && email !== admin.email) {
         const emailExists = await Admin.findOne({ email });
         if (emailExists) {
             return next(new ErrorHandler("Email already in use", 400));
         }
-        // Also update in User collection
+  
         await User.findByIdAndUpdate(admin.user, { email }, { new: true });
     }
 
-    // Keep the linked user name in sync
     if ((firstName || lastName) && admin.user) {
         const existingUser = await User.findById(admin.user).select('+password');
         if (existingUser) {
@@ -149,7 +139,6 @@ export const updateAdmin = asyncHandler(async (req, res, next) => {
         }
     }
 
-    // Update admin fields
     if (firstName) admin.firstName = firstName;
     if (lastName) admin.lastName = lastName;
     if (phone) admin.phone = phone;
@@ -185,8 +174,6 @@ export const updateAdmin = asyncHandler(async (req, res, next) => {
     }
 
     await admin.save();
-
-    // Populate user reference before returning
     await admin.populate('user', '-password -resetPasswordToken -resetPasswordExpire');
 
     res.status(200).json({

@@ -145,3 +145,22 @@ export const deleteResult = asyncHandler(async (req, res, next) => {
     message: "Result deleted successfully",
   });
 });
+
+export const getResultsByClassAndSubject = asyncHandler(async (req, res, next) => {
+  const { sclass, subject } = req.params;
+
+  const results = await Result.find({ sclass, subject })
+    .populate("student", "name email")
+    .populate("subject", "subjectName subjectCode")
+    .populate("sclass", "sclassName");
+
+  if (!results.length) {
+    return next(new ErrorHandler("No results found for the specified class and subject", 404));
+  }
+
+  res.status(200).json({
+    success: true,
+    results,
+  });
+});
+
