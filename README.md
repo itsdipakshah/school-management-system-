@@ -10,7 +10,7 @@ To test the features across different system privileges, use the following pre-c
 
 ### 👑 1. Admin Role
 * **Email:** `dipakshah3321@gmail.com`
-* **Password:** `12345678`
+* **Password:** `99999999`
 * **Access Level:** Complete operational override (Manage classes, assign subjects, register teachers/students).
 
 ### 👨‍🏫 2. Teacher Role
